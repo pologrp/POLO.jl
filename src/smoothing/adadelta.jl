@@ -20,7 +20,7 @@ function initialize!(adadelta::Adadelta,x₀::Vector{Float64})
     adadelta.xprev = copy(x₀)
 end
 
-function smooth!(adadelta::Adadelta,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
+function smooth!(adadelta::Adadelta,k::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ρ,ϵ = adadelta.params
     Δx = x-adadelta.xprev
     adadelta.grms = ρ*adadelta.grms + (1-ρ)*(gprev .* gprev)

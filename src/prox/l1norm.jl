@@ -14,6 +14,6 @@ function prox!(l1norm::L1norm,step::Real,xprev::AbstractVector,gcurr::AbstractVe
     @unpack λ = l1norm.params
     xval = xprev - step*gcurr
     temp = max.(abs.(xval) .- λ*step, zeros(length(xprev)))
-    xcurr = temp
+    xcurr .= temp
     xcurr[xval .< 0] *= -1
 end

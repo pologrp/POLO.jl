@@ -1,5 +1,6 @@
 const mylib = Libdl.dlopen(joinpath(pwd(), "install", "lib", "libapi.so"));
 const proxgradient_s = Libdl.dlsym(mylib, :proxgradient_s)
+const test = Libdl.dlsym(mylib, :test)
 
 struct ProxGradient{Boosting <: AbstractBoosting,
                     Step <: AbstractStep,
@@ -61,7 +62,7 @@ function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
     smooth = smoothing(proxgrad)
     proxim = prox(proxgrad)
 
-    ccall(proxgradient_s, Void,
+    return ccall(proxgradient_s, Void,
           (Ptr{Cdouble}, Ptr{Cdouble},
            Ptr{Void}, Any,
            Ptr{Void},
@@ -76,4 +77,13 @@ function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
           step_c, step,
           smoothing_c, smooth,
           prox_c, proxim)
+end
+
+function testit(x₀::AbstractVector,loss::AbstractLoss)
+    x = full(x₀)
+    g = zeros(x)
+    return ccall(test, Cdouble,
+          (Ptr{Cdouble}, Ptr{Cdouble},
+           Ptr{Void}, Any),
+          x, g, loss_c, loss)
 end

@@ -1,14 +1,16 @@
 abstract type AbstractProx <: AbstractPolicy end
 
-function prox!(prox::AbstractProx,step::Real,xprev::AbstractVector,gcurr::AbstractVector,xcurr::AbstractVector)
-    error("No defined prox! function for prox policy ", typeof(prox))
-end
+# function prox!(prox::AbstractProx,step::Real,xprev::AbstractVector,gcurr::AbstractVector,xcurr::AbstractVector)
+#     error("No defined prox! function for prox policy ", typeof(prox))
+# end
+
+function prox!() end
 
 function prox_wrapper(step::Cdouble, xprev_b::Ptr{Cdouble},
                       xprev_e::Ptr{Cdouble}, gcurr_b::Ptr{Cdouble}, xcurr_b::Ptr{Cdouble},
                       prox_data::Ptr{Void})::Ptr{Cdouble}
     prox_policy = unsafe_pointer_to_objref(prox_data)::AbstractProx
-    ptrdiff = Int(xprev_b - xprev_e)
+    ptrdiff = Int(xprev_e - xprev_b)
     N = divrem(ptrdiff, sizeof(Cdouble))[1]
     xprev = unsafe_wrap(Array, xprev_b, N)
     gcurr = unsafe_wrap(Array, gcurr_b, N)
@@ -24,7 +26,11 @@ module Prox
 
 using Parameters
 using POLO: AbstractProx, AbstractPolicyParameters
-import POLO.prox!
+import POLO: initialize!, prox!
+
+function initialize!(policy::AbstractProx,x₀::Vector{Float64})
+    nothing
+end
 
 include("none.jl")
 #include("affine.jl")

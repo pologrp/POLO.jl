@@ -16,5 +16,5 @@ function prox!(l2ball::L2ball,step::Real,xprev::AbstractVector,gcurr::AbstractVe
     temp = xprev - step*gcurr
     radius = norm(temp,2)
     scaling = r/max(radius,r)
-    # xcurr = c + scaling* ?
+    # xcurr = c + scaling*xprev
 end

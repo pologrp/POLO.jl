@@ -1,10 +1,12 @@
 abstract type AbstractBoosting <: AbstractPolicy end
 
-function boost!(boosting::AbstractBoosting,gprev::AbstractVector,gcurr::AbstractVector)
-    error("No defined boost! function for boosting policy ", typeof(boosting))
-end
+# function boost!(boosting::AbstractBoosting,gprev::AbstractVector,gcurr::AbstractVector)
+#     error("No defined boost! function for boosting policy ", typeof(boosting))
+# end
 
-function boost_wrapper(gprev_b::Ptr{Cdouble},gprev_e::Ptr{Cdouble},gcurr_b::Ptr{Cdouble},boost_data::Ptr{Void})::Ptr{Cdouble}
+function boost!() end
+
+function boost_wrapper(gprev_b::Ptr{Cdouble},gprev_e::Ptr{Cdouble},gcurr_b::Ptr{Cdouble},boost_data::Ptr{Void})
     boost_policy = unsafe_pointer_to_objref(boost_data)::AbstractBoosting
     ptrdiff = Int(gprev_e - gprev_b)
     N = divrem(ptrdiff, sizeof(Cdouble))[1]
@@ -21,7 +23,11 @@ module Boosting
 
 using Parameters
 using POLO: AbstractBoosting, AbstractPolicyParameters
-import POLO.boost!
+import POLO: initialize!, boost!
+
+function initialize!(policy::AbstractBoosting,x₀::Vector{Float64})
+    nothing
+end
 
 include("none.jl")
 include("momentum.jl")
