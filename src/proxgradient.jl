@@ -56,6 +56,10 @@ end
 function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
     xbegin = pointer(x₀, 1)
     xend = pointer(x₀, length(x₀) + 1)
+    boost = boosting(proxgrad)
+    step = stepsize(proxgrad)
+    smooth = smoothing(proxgrad)
+    proxim = prox(proxgrad)
 
     ccall(proxgradient_s, Void,
           (Ptr{Cdouble}, Ptr{Cdouble},
@@ -68,8 +72,8 @@ function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
           xbegin, xend,
           loss_c, loss,
           init_c,
-          boosting_c, boosting(proxgrad),
-          step_c, stepsize(proxgrad),
-          smoothing_c, smoothing(proxgrad),
-          prox_c, prox(proxgrad))
+          boosting_c, boost,
+          step_c, step,
+          smoothing_c, smooth,
+          prox_c, proxim)
 end

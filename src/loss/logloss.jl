@@ -16,8 +16,8 @@ struct LogLoss <: AbstractLoss
   end
 end
 
-numcomponents(loss::LogLoss)    = loss.N
-numcoordinates(loss::LogLoss)   = loss.d
+nfeatures(loss::LogLoss)    = loss.d
+nsamples(loss::LogLoss)   = loss.N
 
 function _value{T<:Real}(x::AbstractVector{T}, A::AbstractMatrix,
   b::AbstractVector, N::Integer)
@@ -31,8 +31,8 @@ end
 
 function value{T<:Real}(loss::LogLoss, x::AbstractVector{T})
   N, d, A, b = loss.N, loss.d, loss.A, loss.b
-  if length(x) ≠ numcoordinates(loss)
-    warn("value: `x` must have a length of `numcoordinates(loss)`")
+  if length(x) ≠ nfeatures(loss)
+    warn("value: `x` must have a length of `nfeatures(loss)`")
     throw(DomainError())
   end
   return _value(x, A, b, N)
@@ -42,8 +42,8 @@ function value{T<:Real,S<:Integer}(loss::LogLoss, x::AbstractVector{T},
   comps::AbstractVector{S})
   N, d = loss.N, loss.d
   compmin, compmax = extrema(comps)
-  if length(x) ≠ numcoordinates(loss)
-    warn("value: `x` must have a length of `numcoordinates(loss)`")
+  if length(x) ≠ nfeatures(loss)
+    warn("value: `x` must have a length of `nfeatures(loss)`")
     throw(DomainError())
   elseif compmin < 1 || compmax > N
     warn("value: `comps` must lie within [1,$(N)]")
@@ -68,8 +68,8 @@ end
 function gradient!{T<:Real}(loss::LogLoss, x::AbstractVector{T},
   dx::AbstractVector{T})
   N, d, A, b = loss.N, loss.d, loss.A, loss.b
-  if length(x) ≠ length(dx) || length(x) ≠ numcoordinates(loss)
-    warn("gradient!: Both `x` and `dx` must have a length of `numcoordinates(loss)`")
+  if length(x) ≠ length(dx) || length(x) ≠ nfeatures(loss)
+    warn("gradient!: Both `x` and `dx` must have a length of `nfeatures(loss)`")
     throw(DomainError())
   end
 
@@ -80,8 +80,8 @@ function gradient!{T<:Real,S<:Integer}(loss::LogLoss, x::AbstractVector{T},
   dx::AbstractVector{T}, comps::AbstractVector{S})
   N, d = loss.N, loss.d
   compmin, compmax = extrema(comps)
-  if length(x) ≠ length(dx) || length(x) ≠ numcoordinates(loss)
-    warn("gradient!: Both `x` and `dx` must have a length of `numcoordinates(loss)`")
+  if length(x) ≠ length(dx) || length(x) ≠ nfeatures(loss)
+    warn("gradient!: Both `x` and `dx` must have a length of `nfeatures(loss)`")
     throw(DomainError())
   elseif compmin < 1 || compmax > N
     warn("gradient!: `comps` must lie within [1,$(N)]")

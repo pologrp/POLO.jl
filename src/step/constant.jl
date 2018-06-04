@@ -11,5 +11,6 @@ struct Constant <: AbstractStep
 end
 
 function stepsize(constant::Constant,k::Integer,fval::Real,x::AbstractVector,g::AbstractVector)
+    println("I am a constant step")
     return constant.params.γ
 end
