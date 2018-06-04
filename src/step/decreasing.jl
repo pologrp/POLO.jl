@@ -10,7 +10,7 @@ struct Decreasing <: AbstractStep
     end
 end
 
-function step(decreasing::Decreasing,k::Integer,fval::Real,x::AbstractVector,g::AbstractVector)
+function stepsize(decreasing::Decreasing,k::Integer,fval::Real,x::AbstractVector,g::AbstractVector)
     @unpack γ = decreasing.params
     return γ/√k
 end

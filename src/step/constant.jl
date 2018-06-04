@@ -10,6 +10,6 @@ struct Constant <: AbstractStep
     end
 end
 
-function step(constant::Constant,k::Integer,fval::Real,x::AbstractVector,g::AbstractVector)
+function stepsize(constant::Constant,k::Integer,fval::Real,x::AbstractVector,g::AbstractVector)
     return constant.params.γ
 end

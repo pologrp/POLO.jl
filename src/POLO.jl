@@ -14,7 +14,8 @@ include("step/step.jl")
 include("smoothing/smoothing.jl")
 include("prox/prox.jl")
 
+include("loss/loss.jl")
+
 include("proxgradient.jl")
-include("polo_interface.jl")
 
 end # module
