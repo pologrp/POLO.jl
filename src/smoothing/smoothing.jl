@@ -6,7 +6,7 @@ abstract type AbstractSmoothing <: AbstractPolicy end
 
 function smooth!() end
 
-function smooth_wrapper(k::Cint, xbegin::Ptr{Cdouble},
+function smooth_wrapper(klocal::Cint, kglobal::Cint, xbegin::Ptr{Cdouble},
                         xend::Ptr{Cdouble}, gprev_b::Ptr{Cdouble}, gcurr_b::Ptr{Cdouble},
                         smooth_data::Ptr{Void})
     smooth_policy = unsafe_pointer_to_objref(smooth_data)::AbstractSmoothing
@@ -15,12 +15,12 @@ function smooth_wrapper(k::Cint, xbegin::Ptr{Cdouble},
     x = unsafe_wrap(Array, xbegin, N)
     gprev = unsafe_wrap(Array, gprev_b, N)
     gcurr = unsafe_wrap(Array, gcurr_b, N)
-    smooth!(smooth_policy, k, x, gprev, gcurr)
+    smooth!(smooth_policy, klocal, kglobal, x, gprev, gcurr)
     return gcurr_b + ptrdiff
 end
 
 const smoothing_c = cfunction(smooth_wrapper, Ptr{Cdouble},
-                              (Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))
+                              (Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))
 
 module Smoothing
 

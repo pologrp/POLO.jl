@@ -15,7 +15,7 @@ function initialize!(adagrad::Adagrad,x₀::Vector{Float64})
     adagrad.grms = zeros(length(x₀))
 end
 
-function smooth!(adagrad::Adagrad,k::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
+function smooth!(adagrad::Adagrad,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ϵ = adagrad.params
     adagrad.grms = gprev .* gprev
     gcurr = gprev ./ (.√adagrad.grms + ϵ)

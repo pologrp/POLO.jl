@@ -1,6 +1,5 @@
-const mylib = Libdl.dlopen(joinpath(pwd(), "install", "lib", "libapi.so"));
+const mylib = Libdl.dlopen(joinpath(dirname(@__FILE__), "..", "install", "lib", "libapi.so"));
 const proxgradient_s = Libdl.dlsym(mylib, :proxgradient_s)
-const test = Libdl.dlsym(mylib, :test)
 
 struct ProxGradient{Boosting <: AbstractBoosting,
                     Step <: AbstractStep,

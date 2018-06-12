@@ -16,7 +16,7 @@ function initialize!(rmsprop::RMSprop,x₀::Vector{Float64})
     rmsprop.gmrs = zeros(length(x₀))
 end
 
-function smooth!(rmsprop::RMSprop,k::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
+function smooth!(rmsprop::RMSprop,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ρ,ϵ = rmsprop.params
     rmsprop.grms = ρ*adadelta.grms + (1-ρ)*(gprev .* gprev)
     gcurr = gprev ./ (.√rmsprop.grms + ϵ)
