@@ -14,5 +14,5 @@ end
 function prox!(box::Box,step::Real,xprev::AbstractVector,gcurr::AbstractVector,xcurr::AbstractVector)
     @unpack l, u = box.params
     temp = xprev - step*gcurr
-    xcurr = min.(max.(temp, l), u)
+    xcurr .= min.(max.(temp, l), u)
 end

@@ -77,12 +77,3 @@ function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
           smoothing_c, smooth,
           prox_c, proxim)
 end
-
-function testit(x₀::AbstractVector,loss::AbstractLoss)
-    x = full(x₀)
-    g = zeros(x)
-    return ccall(test, Cdouble,
-          (Ptr{Cdouble}, Ptr{Cdouble},
-           Ptr{Void}, Any),
-          x, g, loss_c, loss)
-end

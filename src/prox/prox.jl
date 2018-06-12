@@ -33,11 +33,11 @@ function initialize!(policy::AbstractProx,x₀::Vector{Float64})
 end
 
 include("none.jl")
-#include("affine.jl")
+include("affine.jl")
 include("box.jl")
-#include("halfspace.jl")
+include("halfspace.jl")
 include("l1norm.jl")
-#include("l2ball.jl")
-#include("orthant.jl")
+include("l2ball.jl")
+include("orthant.jl")
 
 end

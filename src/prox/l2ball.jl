@@ -13,8 +13,7 @@ end
 
 function prox!(l2ball::L2ball,step::Real,xprev::AbstractVector,gcurr::AbstractVector,xcurr::AbstractVector)
     @unpack r,c = l2ball.params
-    temp = xprev - step*gcurr
-    radius = norm(temp,2)
+    radius = norm(xprev - step*gcurr,2)
     scaling = r/max(radius,r)
-    # xcurr = c + scaling*xprev
+    xcurr .= c + scaling*(xprev-c)
 end
