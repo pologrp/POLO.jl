@@ -1,5 +1,6 @@
 abstract type AbstractPolicy end
 abstract type AbstractPolicyParameters end
+abstract type ExecutionPolicy end
 
 # function initialize!(policy::AbstractPolicy,x₀::Vector{Float64})
 #     error("No initialize! function for policy ", typeof(policy))
