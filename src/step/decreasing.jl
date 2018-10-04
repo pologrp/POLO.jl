@@ -3,7 +3,7 @@
 end
 
 struct Decreasing <: AbstractStep
-    params::ConstantParameters{Float64}
+    params::DecreasingParameters{Float64}
 
     function (::Type{Decreasing})(; kwargs...)
         return new(DecreasingParameters(; kwargs...))

@@ -31,7 +31,7 @@ end
 
 function boost!(momentum::Momentum{Nesterov},wid::Integer,klocal::Integer,kglobal::Integer,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack μ,ϵ = momentum.params
-    νprev .= copy(momentum.ν)
+    νprev = copy(momentum.ν)
     momentum.ν .= μ*νprev+ϵ*gprev
     gcurr .= μ^2*νprev+(1+μ)*ϵ*gprev
 end

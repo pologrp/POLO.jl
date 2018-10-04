@@ -3,6 +3,7 @@ mutable struct ProxGradient{Execution <: ExecutionPolicy,
                             Step <: AbstractStep,
                             Smoothing <: AbstractSmoothing,
                             Prox <: AbstractProx}
+    execution::Execution
     boosting::Boosting
     step::Step
     smoothing::Smoothing
@@ -19,13 +20,49 @@ mutable struct ProxGradient{Execution <: ExecutionPolicy,
                                                        Step <: AbstractStep,
                                                        Smoothing <: AbstractSmoothing,
                                                        Prox <: AbstractProx}
-        proxgrad = new{Execution,Boosting,Step,Smoothing,Prox}(boosting,step,smoothing,prox)
+        proxgrad = new{Execution,Boosting,Step,Smoothing,Prox}(execution,boosting,step,smoothing,prox,C_NULL,zeros(0))
         initialize!(proxgrad)
         return proxgrad
     end
 end
 Base.cconvert(::Type{Ptr{Void}}, proxgrad::ProxGradient)       = proxgrad
 Base.unsafe_convert(::Type{Ptr{Void}}, proxgrad::ProxGradient) = proxgrad.ptr
+function destruct(proxgrad::ProxGradient)
+    ccall(delete_handle(proxgrad.execution), Void, (Ptr{Void},), proxgrad)
+end
+
+function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger)
+    resize!(proxgrad.x,length(x₀))
+    proxgrad.x[:] = x₀
+    xbegin = pointer(proxgrad.x, 1)
+    xend = pointer(proxgrad.x, length(x₀) + 1)
+    return ccall(execution_handle(proxgrad.execution), Void,
+                 (Ptr{Void},Ptr{Cdouble}, Ptr{Cdouble},
+                  Ptr{Void}, Any,
+                  Ptr{Void}, Any,
+                  Ptr{Void}, Any),
+                 proxgrad,
+                 xbegin, xend,
+                 POLO.loss_c, loss,
+                 POLO.termination_c, termination,
+                 POLO.log_c, logger)
+end
+function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
+    termination = POLO.Utility.MaxIteration(100)
+    return proxgrad(x₀,loss,termination,POLO.Utility.ProgressLogger.Value(termination))
+end
+function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination)
+    return proxgrad(x₀,loss,termination,POLO.Utility.ProgressLogger.Gradient(termination))
+end
+
+function getf(proxgrad::ProxGradient)
+    return ccall(getf_handle(proxgrad.execution), Cdouble, (Ptr{Void},), proxgrad)
+end
+
+function getx!(proxgrad::ProxGradient)
+    ccall(getx_handle(proxgrad.execution), Void, (Ptr{Void}, Ref{Cdouble}), proxgrad, proxgrad.x)
+    return proxgrad.x
+end
 
 function set_boosting_params!(proxgrad::ProxGradient; kwargs...)
     if params(proxgrad.boosting) == nothing
