@@ -18,5 +18,5 @@ end
 function smooth!(adagrad::Adagrad,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ϵ = adagrad.params
     adagrad.grms = gprev .* gprev
-    gcurr = gprev ./ (.√adagrad.grms + ϵ)
+    gcurr = gprev ./ (.√adagrad.grms .+ ϵ)
 end

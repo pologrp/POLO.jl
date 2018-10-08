@@ -1,5 +1,7 @@
 module POLO
 
+using Libdl
+
 export
     ProxGradient,
     Execution,
@@ -12,6 +14,7 @@ export
     getf,
     getx!
 
+include("load_library.jl")
 include("policy.jl")
 include("boosting/boosting.jl")
 include("step/step.jl")
@@ -23,5 +26,7 @@ include("utility/utility.jl")
 
 include("proxgradient.jl")
 include("execution/execution.jl")
+
+include("solvers.jl")
 
 end # module

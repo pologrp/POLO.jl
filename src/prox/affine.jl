@@ -1,4 +1,4 @@
-using Base.LinAlg.Cholesky
+using LinearAlgebra
 
 @with_kw mutable struct AffineParameters{T <: AbstractFloat} <: AbstractPolicyParameters
     A::Matrix{T}

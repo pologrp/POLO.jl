@@ -1,11 +1,8 @@
-const proxgradient_master = Libdl.dlsym(mylib, :proxgradient_master)
-const delete_proxgradient_master = Libdl.dlsym(mylib, :delete_proxgradient_master)
-const run_master = Libdl.dlsym(mylib, :run_master)
-# const getf_master = Libdl.dlsym(mylib, :getf_master)
-# const getx_master = Libdl.dlsym(mylib, :getx_master)
+# const getf_master = Libdl.dlsym(polo_lib, :getf_master)
+# const getx_master = Libdl.dlsym(polo_lib, :getx_master)
 
 mutable struct Master <: ParameterServer
-    popts::Ptr{Void}
+    popts::Ptr{Cvoid}
     paramoptions::ParameterServerOptions
 
     function (::Type{Master})(; kw...)
@@ -13,10 +10,10 @@ mutable struct Master <: ParameterServer
         initialize_paramserver_options!(master)
     end
 end
-Base.cconvert(::Type{Ptr{Void}}, master::Master)       = master
-Base.unsafe_convert(::Type{Ptr{Void}}, master::Master) = master.popts
+Base.cconvert(::Type{Ptr{Cvoid}}, master::Master)       = master
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, master::Master) = master.popts
 function destruct(master::Master)
-    ccall(delete_paramserver_options, Void, (Ptr{Void},), master)
+    ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), master)
 end
 
 paramserver_handle(::Master) = proxgradient_master

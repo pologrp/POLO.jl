@@ -8,7 +8,7 @@ function stepsize() end
 
 function step_wrapper(klocal::Cint, kglobal::Cint, fval::Cdouble, xbegin::Ptr{Cdouble},
                       xend::Ptr{Cdouble}, gbegin::Ptr{Cdouble},
-                      step_data::Ptr{Void})
+                      step_data::Ptr{Cvoid})
     step_policy = unsafe_pointer_to_objref(step_data)::AbstractStep
     ptrdiff = Int(xend - xbegin)
     N = divrem(ptrdiff, sizeof(Cdouble))[1]
@@ -16,9 +16,6 @@ function step_wrapper(klocal::Cint, kglobal::Cint, fval::Cdouble, xbegin::Ptr{Cd
     g = unsafe_wrap(Array, gbegin, N)
     return stepsize(step_policy, klocal, kglobal, fval, x, g)
 end
-
-const step_c = cfunction(step_wrapper, Cdouble,
-                         (Cint, Cint, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))
 
 module Step
 

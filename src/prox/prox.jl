@@ -8,7 +8,7 @@ function prox!() end
 
 function prox_wrapper(step::Cdouble, xprev_b::Ptr{Cdouble},
                       xprev_e::Ptr{Cdouble}, gcurr_b::Ptr{Cdouble}, xcurr_b::Ptr{Cdouble},
-                      prox_data::Ptr{Void})::Ptr{Cdouble}
+                      prox_data::Ptr{Cvoid})::Ptr{Cdouble}
     prox_policy = unsafe_pointer_to_objref(prox_data)::AbstractProx
     ptrdiff = Int(xprev_e - xprev_b)
     N = divrem(ptrdiff, sizeof(Cdouble))[1]
@@ -19,11 +19,9 @@ function prox_wrapper(step::Cdouble, xprev_b::Ptr{Cdouble},
     return xcurr_b + ptrdiff
 end
 
-const prox_c = cfunction(prox_wrapper, Ptr{Cdouble},
-                         (Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))
-
 module Prox
 
+using LinearAlgebra
 using Parameters
 using POLO: AbstractProx, AbstractPolicyParameters
 import POLO: initialize!, prox!

@@ -13,11 +13,11 @@ mutable struct RMSprop <: AbstractSmoothing
 end
 
 function initialize!(rmsprop::RMSprop,x₀::Vector{Float64})
-    rmsprop.gmrs = zeros(length(x₀))
+    rmsprop.grms = zeros(length(x₀))
 end
 
 function smooth!(rmsprop::RMSprop,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ρ,ϵ = rmsprop.params
-    rmsprop.grms = ρ*adadelta.grms + (1-ρ)*(gprev .* gprev)
-    gcurr = gprev ./ (.√rmsprop.grms + ϵ)
+    rmsprop.grms = ρ*rmsprop.grms + (1-ρ)*(gprev .* gprev)
+    gcurr = gprev ./ (.√rmsprop.grms .+ ϵ)
 end

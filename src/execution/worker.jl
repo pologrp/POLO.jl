@@ -1,11 +1,8 @@
-const proxgradient_worker = Libdl.dlsym(mylib, :proxgradient_worker)
-const delete_proxgradient_worker = Libdl.dlsym(mylib, :delete_proxgradient_worker)
-const run_worker = Libdl.dlsym(mylib, :run_worker)
-# const getf_worker = Libdl.dlsym(mylib, :getf_worker)
-# const getx_worker = Libdl.dlsym(mylib, :getx_worker)
+# const getf_worker = Libdl.dlsym(polo_lib, :getf_worker)
+# const getx_worker = Libdl.dlsym(polo_lib, :getx_worker)
 
 mutable struct Worker <: ParameterServer
-    popts::Ptr{Void}
+    popts::Ptr{Cvoid}
     paramoptions::ParameterServerOptions
 
     function (::Type{Worker})(; kw...)
@@ -13,10 +10,10 @@ mutable struct Worker <: ParameterServer
         initialize_paramserver_options!(worker)
     end
 end
-Base.cconvert(::Type{Ptr{Void}}, worker::Worker)       = worker
-Base.unsafe_convert(::Type{Ptr{Void}}, worker::Worker) = worker.popts
+Base.cconvert(::Type{Ptr{Cvoid}}, worker::Worker)       = worker
+Base.unsafe_convert(::Type{Ptr{Cvoid}}, worker::Worker) = worker.popts
 function destruct(worker::Worker)
-    ccall(delete_paramserver_options, Void, (Ptr{Void},), worker)
+    ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), worker)
 end
 
 paramserver_handle(::Worker) = proxgradient_worker

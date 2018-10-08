@@ -10,7 +10,7 @@ function initialize!() end
 
 params(policy::AbstractPolicy) = nothing
 
-function init_wrapper(xbegin::Ptr{Cdouble},xend::Ptr{Cdouble},policy_data::Ptr{Void})::Void
+function init_wrapper(xbegin::Ptr{Cdouble},xend::Ptr{Cdouble},policy_data::Ptr{Cvoid})::Nothing
     policy = unsafe_pointer_to_objref(policy_data)::AbstractPolicy
     ptrdiff = Int(xend - xbegin)
     N = divrem(ptrdiff, sizeof(Cdouble))[1]
@@ -18,6 +18,3 @@ function init_wrapper(xbegin::Ptr{Cdouble},xend::Ptr{Cdouble},policy_data::Ptr{V
     initialize!(policy, x₀)
     nothing
 end
-
-const init_c = cfunction(init_wrapper, Void,
-                         (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))

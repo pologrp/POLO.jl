@@ -1,31 +1,35 @@
-const proxgradient_s = Libdl.dlsym(mylib, :proxgradient_s)
-const delete_proxgradient_s = Libdl.dlsym(mylib, :delete_proxgradient_s)
-const run_serial = Libdl.dlsym(mylib, :run_serial)
-const getf_s = Libdl.dlsym(mylib, :getf_s)
-const getx_s = Libdl.dlsym(mylib, :getx_s)
-
 struct Serial <: ExecutionPolicy end
 
 function initialize!(proxgrad::ProxGradient{Serial})
+    init_c = @cfunction(init_wrapper, Nothing,
+                        (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
     boost = POLO.boosting(proxgrad)
+    boosting_c = @cfunction(boost_wrapper, Ptr{Cdouble},
+                              (Cint, Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
     step = POLO.stepsize(proxgrad)
+    step_c = @cfunction(step_wrapper, Cdouble,
+                          (Cint, Cint, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
     smooth = POLO.smoothing(proxgrad)
+    smoothing_c = @cfunction(smooth_wrapper, Ptr{Cdouble},
+                               (Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
     proxim = POLO.prox(proxgrad)
-    proxgrad.ptr = ccall(proxgradient_s, Ptr{Void},
-                         (Ptr{Void},
-                          Ptr{Void}, Any,
-                          Ptr{Void}, Any,
-                          Ptr{Void}, Any,
-                          Ptr{Void}, Any),
-                         POLO.init_c,
-                         POLO.boosting_c, boost,
-                         POLO.step_c, step,
-                         POLO.smoothing_c, smooth,
-                         POLO.prox_c, proxim)
+    prox_c = @cfunction(prox_wrapper, Ptr{Cdouble},
+                          (Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
+    proxgrad.ptr = ccall(POLO.proxgradient_s, Ptr{Cvoid},
+                         (Ptr{Cvoid},
+                          Ptr{Cvoid}, Any,
+                          Ptr{Cvoid}, Any,
+                          Ptr{Cvoid}, Any,
+                          Ptr{Cvoid}, Any),
+                         init_c,
+                         boosting_c, boost,
+                         step_c, step,
+                         smoothing_c, smooth,
+                         prox_c, proxim)
     return proxgrad
 end
 
-execution_handle(::Serial) = run_serial
-delete_handle(::Serial) = delete_proxgradient_s
-getf_handle(::Serial) = getf_s
-getx_handle(::Serial) = getx_s
+execution_handle(::Serial) = POLO.run_serial
+delete_handle(::Serial) = POLO.delete_proxgradient_s
+getf_handle(::Serial) = POLO.getf_s
+getx_handle(::Serial) = POLO.getx_s

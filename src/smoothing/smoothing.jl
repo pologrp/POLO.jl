@@ -8,7 +8,7 @@ function smooth!() end
 
 function smooth_wrapper(klocal::Cint, kglobal::Cint, xbegin::Ptr{Cdouble},
                         xend::Ptr{Cdouble}, gprev_b::Ptr{Cdouble}, gcurr_b::Ptr{Cdouble},
-                        smooth_data::Ptr{Void})
+                        smooth_data::Ptr{Cvoid})
     smooth_policy = unsafe_pointer_to_objref(smooth_data)::AbstractSmoothing
     ptrdiff = Int(xend - xbegin)
     N = divrem(ptrdiff, sizeof(Cdouble))[1]
@@ -18,9 +18,6 @@ function smooth_wrapper(klocal::Cint, kglobal::Cint, xbegin::Ptr{Cdouble},
     smooth!(smooth_policy, klocal, kglobal, x, gprev, gcurr)
     return gcurr_b + ptrdiff
 end
-
-const smoothing_c = cfunction(smooth_wrapper, Ptr{Cdouble},
-                              (Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))
 
 module Smoothing
 

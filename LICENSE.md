@@ -1,6 +1,7 @@
-The POLO.jl package is licensed under the MIT "Expat" License:
+MIT License
 
-> Copyright (c) 2018: Martin Biel.
+> Copyright (c) 2018 Arda Aytekin (aytekin@kth.se), Martin Biel (mbiel@kth.se),
+> Mikael Johansson (mikaelj@kth.se).
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy
 > of this software and associated documentation files (the "Software"), to deal

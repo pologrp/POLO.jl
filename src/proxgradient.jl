@@ -8,7 +8,7 @@ mutable struct ProxGradient{Execution <: ExecutionPolicy,
     step::Step
     smoothing::Smoothing
     prox::Prox
-    ptr::Ptr{Void}
+    ptr::Ptr{Nothing}
     x::Vector{Float64}
 
     function (::Type{ProxGradient})(execution::Execution,
@@ -25,10 +25,10 @@ mutable struct ProxGradient{Execution <: ExecutionPolicy,
         return proxgrad
     end
 end
-Base.cconvert(::Type{Ptr{Void}}, proxgrad::ProxGradient)       = proxgrad
-Base.unsafe_convert(::Type{Ptr{Void}}, proxgrad::ProxGradient) = proxgrad.ptr
+Base.cconvert(::Type{Ptr{Nothing}}, proxgrad::ProxGradient)       = proxgrad
+Base.unsafe_convert(::Type{Ptr{Nothing}}, proxgrad::ProxGradient) = proxgrad.ptr
 function destruct(proxgrad::ProxGradient)
-    ccall(delete_handle(proxgrad.execution), Void, (Ptr{Void},), proxgrad)
+    ccall(delete_handle(proxgrad.execution), Nothing, (Ptr{Nothing},), proxgrad)
 end
 
 function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger)
@@ -36,16 +36,22 @@ function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termin
     proxgrad.x[:] = x₀
     xbegin = pointer(proxgrad.x, 1)
     xend = pointer(proxgrad.x, length(x₀) + 1)
-    return ccall(execution_handle(proxgrad.execution), Void,
-                 (Ptr{Void},Ptr{Cdouble}, Ptr{Cdouble},
-                  Ptr{Void}, Any,
-                  Ptr{Void}, Any,
-                  Ptr{Void}, Any),
+    loss_c = @cfunction(loss_wrapper, Cdouble,
+                        (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
+    termination_c = @cfunction(termination_wrapper, Cint,
+                               (Cint, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
+    log_c = @cfunction(log_wrapper, Nothing,
+                       (Cint, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
+    return ccall(execution_handle(proxgrad.execution), Nothing,
+                 (Ptr{Nothing},Ptr{Cdouble}, Ptr{Cdouble},
+                  Ptr{Nothing}, Any,
+                  Ptr{Nothing}, Any,
+                  Ptr{Nothing}, Any),
                  proxgrad,
                  xbegin, xend,
-                 POLO.loss_c, loss,
-                 POLO.termination_c, termination,
-                 POLO.log_c, logger)
+                 loss_c, loss,
+                 termination_c, termination,
+                 log_c, logger)
 end
 function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss)
     termination = POLO.Utility.MaxIteration(100)
@@ -56,11 +62,11 @@ function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termin
 end
 
 function getf(proxgrad::ProxGradient)
-    return ccall(getf_handle(proxgrad.execution), Cdouble, (Ptr{Void},), proxgrad)
+    return ccall(getf_handle(proxgrad.execution), Cdouble, (Ptr{Nothing},), proxgrad)
 end
 
 function getx!(proxgrad::ProxGradient)
-    ccall(getx_handle(proxgrad.execution), Void, (Ptr{Void}, Ref{Cdouble}), proxgrad, proxgrad.x)
+    ccall(getx_handle(proxgrad.execution), Nothing, (Ptr{Nothing}, Ref{Cdouble}), proxgrad, proxgrad.x)
     return proxgrad.x
 end
 

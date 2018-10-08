@@ -8,7 +8,7 @@ function loss!() end
 
 function nfeatures() end
 
-function loss_wrapper(xbegin::Ptr{Cdouble},gbegin::Ptr{Cdouble},loss_data::Ptr{Void})
+function loss_wrapper(xbegin::Ptr{Cdouble},gbegin::Ptr{Cdouble},loss_data::Ptr{Nothing})
     loss = unsafe_pointer_to_objref(loss_data)::AbstractLoss
     N = nfeatures(loss)
     x = unsafe_wrap(Array, xbegin, N)
@@ -17,11 +17,9 @@ function loss_wrapper(xbegin::Ptr{Cdouble},gbegin::Ptr{Cdouble},loss_data::Ptr{V
     return val
 end
 
-const loss_c = cfunction(loss_wrapper, Cdouble,
-                         (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Void}))
-
 module Loss
 
+using LinearAlgebra
 using POLO: AbstractLoss
 import POLO: loss!, nfeatures
 

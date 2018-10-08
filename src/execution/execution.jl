@@ -6,12 +6,11 @@ getx_handle(::ExecutionPolicy) = C_NULL
 
 module Execution
 
+using Libdl
 using POLO
-using POLO: ProxGradient, ExecutionPolicy, AbstractLoss, AbstractLogger, AbstractTermination
+using POLO: ProxGradient, ExecutionPolicy, AbstractLoss, AbstractLogger, AbstractTermination, init_wrapper, boost_wrapper, step_wrapper, smooth_wrapper, prox_wrapper
 using Parameters
 import POLO: initialize!, execution_handle, delete_handle, getf_handle, getx_handle
-
-const mylib = Libdl.dlopen(joinpath(dirname(@__FILE__), "../..", "install", "lib", "libapi.so"));
 
 include("serial.jl")
 include("multithread.jl")

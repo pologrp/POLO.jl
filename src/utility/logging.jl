@@ -5,9 +5,16 @@ abstract type Decision <: LogLevel end
 abstract type Gradient <: LogLevel end
 abstract type Full <: LogLevel end
 
+struct NullLogger <: AbstractLogger end
+
+function log(logger::NullLogger,k::Integer,fval::AbstractFloat,x::AbstractVector,g::AbstractVector)
+    nothing
+end
+
 module SimpleLogger
 
-using POLO.AbstractLogger
+using Printf
+using POLO: AbstractLogger
 using POLO.Utility: LogLevel, Value, Decision, Gradient, Full
 import POLO.log
 
@@ -48,8 +55,10 @@ end
 
 module ProgressLogger
 
+using Printf
+using LinearAlgebra
 using ProgressMeter
-using ProgressMeter.AbstractProgress
+using ProgressMeter: AbstractProgress
 using POLO: AbstractTermination, AbstractLogger
 using POLO.Utility: LogLevel, Value, Decision, Gradient, Full, MaxIteration, GradientNorm
 import POLO.log

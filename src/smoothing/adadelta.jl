@@ -22,9 +22,9 @@ end
 
 function smooth!(adadelta::Adadelta,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ρ,ϵ = adadelta.params
-    Δx = x-adadelta.xprev
+    Δx = x - adadelta.xprev
     adadelta.grms = ρ*adadelta.grms + (1-ρ)*(gprev .* gprev)
     adadelta.xrms = ρ*adadelta.xrms + (1-ρ)*(Δx .* Δx)
-    gcurr = gprev * ((.√adadelta.xrms + ϵ) ./ (.√adadelta.grms + ϵ))
+    gcurr = gprev .* ((.√adadelta.xrms .+ ϵ) ./ (.√adadelta.grms .+ ϵ))
     adadelta.xprev[:] = x
 end
