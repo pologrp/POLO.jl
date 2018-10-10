@@ -31,7 +31,7 @@ end
 module Utility
 
 using POLO
-using POLO: AbstractLogger, AbstractTermination
+using POLO: AbstractTermination, AbstractLogger
 using LinearAlgebra
 
 import POLO: terminate

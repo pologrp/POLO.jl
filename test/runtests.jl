@@ -13,7 +13,8 @@ solvers = [("Gradient descent", POLO.GradientDescent()),
            ("Adagrad", POLO.Adagrad()),
            ("Adadelta", POLO.AdaDelta()),
            ("Adam", POLO.Adam()),
-           ("Nadam", POLO.Nadam())]
+           ("Nadam", POLO.Nadam()),
+           ("BB", POLO.BB())]
 
 @info "Loss functions loaded. Starting test sequence."
 @testset "$sname Solver on loss function $name" for (sname,solver) in solvers, (name,loss) in loss_functions

@@ -18,3 +18,6 @@ Adam(; kw...) = Adam(Execution.Serial(); kw...)
 
 Nadam(execution::ExecutionPolicy; μ = 0.9, ϵ = 1e-3, γ = 1., ρ = 0.9, ϵ_rms = 1e-6) = ProxGradient(execution,Boosting.Nesterov(; μ = μ, ϵ = ϵ),Step.Constant(; γ = γ),Smoothing.RMSprop(; ρ = ρ, ϵ = ϵ_rms),Prox.None())
 Nadam(; kw...) = Nadam(Execution.Serial(); kw...)
+
+BB(execution::ExecutionPolicy) = ProxGradient(execution,Boosting.None(),Step.BB(),Smoothing.None(),Prox.None())
+BB() = BB(Execution.Serial())

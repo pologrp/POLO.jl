@@ -1,19 +1,26 @@
 struct LogLoss <: AbstractLoss
-  N::Int
-  d::Int
-  A::Matrix{Float64}
-  b::Vector{Float64}
+    N::Int
+    d::Int
+    A::Matrix{Float64}
+    b::Vector{Float64}
 
-  function (::Type{LogLoss})(N::Integer, d::Integer)
-    @assert d ≥ 1 "d must be at least 1"
-    @assert N ≥ d "N must be at least $(d)"
+    function (::Type{LogLoss})(N::Integer, d::Integer)
+        @assert d ≥ 1 "d must be at least 1"
+        @assert N ≥ d "N must be at least $(d)"
 
-    A = randn(N, d)
-    A *= 2/norm(A)
-    b = Float64[rand() ≤ 0.5 ? -1. : 1. for idx in 1:N]
+        A = randn(N, d)
+        A *= 2/norm(A)
+        b = Float64[rand() ≤ 0.5 ? -1. : 1. for idx in 1:N]
 
-    new(N, d, A, b)
-  end
+        new(N, d, A, b)
+    end
+
+    function (::Type{LogLoss})(dsfolder::String, range, categories::Vector{String}, nfeatures::Int)
+        A, b = readrcv(dsfolder,range,categories,nfeatures)
+        N, d = size(A)
+
+        new(N, d, A, b)
+    end
 end
 
 nfeatures(loss::LogLoss)    = loss.d
@@ -94,4 +101,68 @@ end
 function loss!(loss::LogLoss, x::AbstractVector, g::AbstractVector)
     gradient!(loss,x,g)
     return value(loss,x)
+end
+
+function readrcv(dsfolder::String, range, categories::Vector{String}, nfeatures::Int)
+    # Feature files
+    featurefiles = map(x->joinpath(dsfolder, x), filter(x->contains(x, "_vec_"), readdir(dsfolder)))
+
+    # Topic files mapping documents to topics
+    topicfiles = map(x->joinpath(dsfolder, x), filter(x->contains(x, ".qrels"), readdir(dsfolder)))
+
+    startidx = first(range)
+    endidx = last(range)
+    N = length(range)
+
+    # Auxilliary variables
+    idx = 0
+    readsamples = 0
+
+    # Sparse matrix A
+    rowindices = Vector{Int}()
+    colindices = Vector{Int}()
+    nzvals = Vector{Float64}()
+
+    # Dense vector b
+    b = zeros(N)
+
+    topicmap = readdlm(topicfiles[1])
+    topics = topicmap[:, 1]
+    docs = topicmap[:, 2]
+
+    for file in featurefiles
+        open(file, "r") do io
+            for line in eachline(io)
+                idx += 1
+                idx < startidx && continue
+                idx > endidx && break
+
+                readsamples += 1
+
+                idxmatch = match(r"^(\d+)", line)
+                docidx = parse(Int, idxmatch[1])
+
+                # b vector
+                docrange = searchsorted(docs, docidx)
+                b[readsamples] = isempty(intersect(topics[docrange],categories)) ? -1. : 1.
+
+                featindices = Vector{Int}()
+                features = Vector{Float64}()
+
+                for m in eachmatch(r"(\d+):(\d\.\d+)", line)
+                    featidx = parse(Int, m[1])
+                    featval = parse(Float64, m[2])
+
+                    push!(featindices, featidx)
+                    push!(features, featval)
+                end
+
+                append!(rowindices, fill(readsamples, length(featindices)))
+                append!(colindices, featindices)
+                append!(nzvals, features)
+            end
+        end
+    end
+
+    sparse(rowindices, colindices, nzvals, readsamples, nfeatures), b
 end

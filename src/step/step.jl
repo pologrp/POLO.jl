@@ -19,6 +19,7 @@ end
 
 module Step
 
+using LinearAlgebra
 using Parameters
 using POLO: AbstractStep, AbstractPolicyParameters
 import POLO: initialize!, stepsize
@@ -29,5 +30,6 @@ end
 
 include("constant.jl")
 include("decreasing.jl")
+include("bb.jl")
 
 end
