@@ -14,14 +14,14 @@ end
 
 function stepsize(bb::BB,klocal::Integer,kglobal::Integer,fval::Real,x::AbstractVector,g::AbstractVector)
     if kglobal == 1
-        bb.xprev[:] = x
-        bb.gprev[:] = g
+        bb.xprev .= x
+        bb.gprev .= g
         return 1.
     end
     s = x - bb.xprev
     y = g - bb.gprev
     η = norm(s,2)^2/(s⋅y)
-    bb.xprev[:] = x
-    bb.gprev[:] = g
+    bb.xprev .= x
+    bb.gprev .= g
     return η
 end

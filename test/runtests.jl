@@ -18,7 +18,7 @@ solvers = [("Gradient descent", POLO.GradientDescent()),
 
 @info "Loss functions loaded. Starting test sequence."
 @testset "$sname Solver on loss function $name" for (sname,solver) in solvers, (name,loss) in loss_functions
-    solver(rand(Loss.nfeatures(loss)),loss,Utility.GradientNorm(1e-6),Utility.NullLogger())
+    solver(rand(Loss.nfeatures(loss)),loss,Utility.GradientNorm(1e-6),Utility.None())
     getx!(solver)
     g = copy(solver.x)
     Loss.loss!(loss, solver.x, g)

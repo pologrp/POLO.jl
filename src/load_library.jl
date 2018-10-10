@@ -1,6 +1,31 @@
+macro load_polo_algorithm(algname)
+    serial = Symbol(algname,:_s)
+    consistent = Symbol(algname,:_mtc)
+    inconsistent = Symbol(algname,:_mti)
+    master = Symbol(algname,:_psm)
+    worker = Symbol(algname,:_psw)
+    scheduler = Symbol(algname,:_pss)
+    quote
+        global $serial = Libdl.dlsym(polo_lib, $(Meta.quot(serial)))
+        global $consistent = Libdl.dlsym(polo_lib, $(Meta.quot(consistent)))
+        global $inconsistent = Libdl.dlsym(polo_lib, $(Meta.quot(inconsistent)))
+        global $master = Libdl.dlsym(polo_lib, $(Meta.quot(master)))
+        global $worker = Libdl.dlsym(polo_lib, $(Meta.quot(worker)))
+        global $scheduler = Libdl.dlsym(polo_lib, $(Meta.quot(scheduler)))
+    end
+end
+
 function __init__()
     global polo_lib = Libdl.dlopen(joinpath(dirname(@__FILE__), "../", "install", "lib", "libapi.so"));
 
+    # POLO solvers
+    @load_polo_algorithm(gradient)
+    @load_polo_algorithm(momentum)
+    @load_polo_algorithm(nesterov)
+    @load_polo_algorithm(adagrad)
+    @load_polo_algorithm(adadelta)
+    @load_polo_algorithm(adam)
+    @load_polo_algorithm(nadam)
     # Serial
     global proxgradient_s = Libdl.dlsym(polo_lib, :proxgradient_s)
     global delete_proxgradient_s = Libdl.dlsym(polo_lib, :delete_proxgradient_s)

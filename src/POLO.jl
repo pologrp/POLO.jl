@@ -12,7 +12,8 @@ export
     Prox,
     Loss,
     getf,
-    getx!
+    getx!,
+    POLOSolvers
 
 include("load_library.jl")
 include("policy.jl")
@@ -28,5 +29,6 @@ include("proxgradient.jl")
 include("execution/execution.jl")
 
 include("solvers.jl")
+include("POLOSolvers.jl")
 
 end # module
