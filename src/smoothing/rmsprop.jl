@@ -3,7 +3,7 @@
     ϵ::T = 1e-6
 end
 
-mutable struct RMSprop <: AbstractSmoothing
+struct RMSprop <: AbstractSmoothing
     params::RMSpropParameters{Float64}
     grms::Vector{Float64}
 
@@ -13,11 +13,12 @@ mutable struct RMSprop <: AbstractSmoothing
 end
 
 function initialize!(rmsprop::RMSprop,x₀::Vector{Float64})
-    rmsprop.grms = zeros(length(x₀))
+    resize!(rmsprop.grms,length(x₀))
+    rmsprop.grms .= zeros(length(x₀))
 end
 
 function smooth!(rmsprop::RMSprop,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ρ,ϵ = rmsprop.params
-    rmsprop.grms = ρ*rmsprop.grms + (1-ρ)*(gprev .* gprev)
-    gcurr = gprev ./ (.√rmsprop.grms .+ ϵ)
+    rmsprop.grms .= ρ*rmsprop.grms + (1-ρ)*(gprev .* gprev)
+    gcurr .= gprev ./ (.√rmsprop.grms .+ ϵ)
 end

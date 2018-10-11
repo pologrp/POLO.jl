@@ -3,7 +3,7 @@
     ϵ::T = 1e-6
 end
 
-mutable struct Adadelta <: AbstractSmoothing
+struct Adadelta <: AbstractSmoothing
     params::AdadeltaParameters{Float64}
     grms::Vector{Float64}
     xrms::Vector{Float64}
@@ -15,16 +15,19 @@ mutable struct Adadelta <: AbstractSmoothing
 end
 
 function initialize!(adadelta::Adadelta,x₀::Vector{Float64})
-    adadelta.grms = zeros(length(x₀))
-    adadelta.xrms = zeros(length(x₀))
-    adadelta.xprev = copy(x₀)
+    resize!(adadelta.grms,length(x₀))
+    resize!(adadelta.xrms,length(x₀))
+    resize!(adadelta.xprev,length(x₀))
+    adadelta.grms .= zero(length(x₀))
+    adadelta.xrms .= zero(length(x₀))
+    adadelta.xprev .= x₀
 end
 
 function smooth!(adadelta::Adadelta,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ρ,ϵ = adadelta.params
     Δx = x - adadelta.xprev
-    adadelta.grms = ρ*adadelta.grms + (1-ρ)*(gprev .* gprev)
-    adadelta.xrms = ρ*adadelta.xrms + (1-ρ)*(Δx .* Δx)
-    gcurr = gprev .* ((.√adadelta.xrms .+ ϵ) ./ (.√adadelta.grms .+ ϵ))
-    adadelta.xprev[:] = x
+    adadelta.grms .= ρ*adadelta.grms + (1-ρ)*(gprev .* gprev)
+    adadelta.xrms .= ρ*adadelta.xrms + (1-ρ)*(Δx .* Δx)
+    gcurr .= gprev .* ((.√adadelta.xrms .+ ϵ) ./ (.√adadelta.grms .+ ϵ))
+    adadelta.xprev .= x
 end

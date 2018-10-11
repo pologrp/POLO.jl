@@ -2,7 +2,7 @@
     λ::T = 1
 end
 
-mutable struct L1norm <: AbstractProx
+struct L1norm <: AbstractProx
     params::L1normParameters{Float64}
 
     function (::Type{L1norm})(; kwargs...)

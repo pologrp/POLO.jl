@@ -33,7 +33,7 @@ end
 
 function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger)
     resize!(proxgrad.x,length(x₀))
-    proxgrad.x[:] = x₀
+    proxgrad.x .= x₀
     xbegin = pointer(proxgrad.x, 1)
     xend = pointer(proxgrad.x, length(x₀) + 1)
     loss_c = @cfunction(loss_wrapper, Cdouble,

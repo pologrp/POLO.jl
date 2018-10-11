@@ -2,7 +2,7 @@
     ϵ::T = 1e-6
 end
 
-mutable struct Adagrad <: AbstractSmoothing
+struct Adagrad <: AbstractSmoothing
     params::AdagradParameters{Float64}
     grms::Vector{Float64}
 
@@ -12,11 +12,12 @@ mutable struct Adagrad <: AbstractSmoothing
 end
 
 function initialize!(adagrad::Adagrad,x₀::Vector{Float64})
-    adagrad.grms = zeros(length(x₀))
+    resize!(adagrad.grms,length(x₀))
+    adagrad.grms .= zeros(length(x₀))
 end
 
 function smooth!(adagrad::Adagrad,klocal::Integer,kglobal::Integer,x::AbstractVector,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack ϵ = adagrad.params
-    adagrad.grms = gprev .* gprev
-    gcurr = gprev ./ (.√adagrad.grms .+ ϵ)
+    adagrad.grms .+= gprev .* gprev
+    gcurr .= gprev ./ (.√adagrad.grms .+ ϵ)
 end

@@ -3,7 +3,7 @@
     c::Vector{T}
 end
 
-mutable struct L2ball <: AbstractProx
+struct L2ball <: AbstractProx
     params::L2ballParameters{Float64}
 
     function (::Type{L2ball})(; kwargs...)

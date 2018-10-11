@@ -5,7 +5,7 @@ using LinearAlgebra
     b::Vector{T}
 end
 
-mutable struct Affine <: AbstractProx
+struct Affine <: AbstractProx
     params::AffineParameters{Float64}
     H::Cholesky{Float64,Matrix{Float64}}
 

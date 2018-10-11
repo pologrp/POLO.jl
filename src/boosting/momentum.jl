@@ -7,7 +7,7 @@ abstract type MomentumTrait end
 abstract type Classical <: MomentumTrait end
 abstract type Nesterov <: MomentumTrait end
 
-mutable struct Momentum{T <: MomentumTrait} <: AbstractBoosting
+struct Momentum{T <: MomentumTrait} <: AbstractBoosting
     params::MomentumParameters{Float64}
     ν::Vector{Float64}
 
@@ -17,7 +17,8 @@ mutable struct Momentum{T <: MomentumTrait} <: AbstractBoosting
 end
 
 function initialize!(momentum::Momentum,x₀::Vector{Float64})
-    momentum.ν = zeros(length(x₀))
+    resize!(momentum.ν,length(x₀))
+    momentum.ν .= zeros(length(x₀))
 end
 
 params(momentum::Momentum) = momentum.params

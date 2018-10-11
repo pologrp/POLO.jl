@@ -3,7 +3,7 @@
     u::Vector{T}
 end
 
-mutable struct Box <: AbstractProx
+struct Box <: AbstractProx
     params::BoxParameters{Float64}
 
     function (::Type{Box})(; kwargs...)

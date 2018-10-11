@@ -3,7 +3,7 @@
     a::Vector{T}
 end
 
-mutable struct Halfspace <: AbstractProx
+struct Halfspace <: AbstractProx
     params::HalfspaceParameters{Float64}
     norm::Float64
 
