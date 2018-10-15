@@ -15,8 +15,17 @@ macro load_polo_algorithm(algname)
     end
 end
 
+# Load in `deps.jl`, complaining if it does not exist
+const depsjl_path = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
+if !isfile(depsjl_path)
+    error("POLO not installed properly, run Pkg.build(\"POLO\"), restart Julia and try again")
+end
+include(depsjl_path)
+
 function __init__()
-    global polo_lib = Libdl.dlopen(joinpath(dirname(@__FILE__), "../", "install", "lib", "libapi.so"));
+    check_deps()
+
+    global polo_lib = Libdl.dlopen(libpolo)
 
     # POLO solvers
     @load_polo_algorithm(gradient)
