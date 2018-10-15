@@ -3,7 +3,8 @@ module POLOSolvers
 using MacroTools
 using MacroTools: @q
 using POLO
-using POLO: AbstractLoss, AbstractTermination, AbstractLogger
+using POLO: AbstractLoss, AbstractTermination, AbstractLogger, ExecutionPolicy
+using POLO.Execution: Serial, ParameterServerOptions, Master, Worker, Scheduler
 
 macro define_polo_algorithm(algname, execution, paramdefs, ctypes)
     params = map(paramdef -> begin @capture(paramdef, param_Symbol::type_ = val_); param end, paramdefs)
@@ -29,7 +30,7 @@ macro define_polo_algorithm(algname, execution, paramdefs, ctypes)
                          termination_c, termination,
                          log_c, logger,
                          $(params...))
-            return x, fval
+            return fval
         end
     end
 end
@@ -49,7 +50,7 @@ macro define_inconsistent_polo_algorithm(algname, execution, paramdefs, ctypes)
                          xbegin, xend,
                          loss_c, loss,
                          $(params...))
-            return x, fval
+            return fval
         end
     end
 end
@@ -71,7 +72,7 @@ macro define_polo_paramserver_algorithm(algname, execution, paramdefs, ctypes)
                          loss_c, loss,
                          options,
                          $(params...))
-            return x, fval
+            return fval
         end
     end
 end
@@ -84,6 +85,7 @@ macro define_polo_algorithms(alg)
     master = Symbol(algname,:_psm)
     worker = Symbol(algname,:_psw)
     scheduler = Symbol(algname,:_pss)
+    structname = Symbol(titlecase(string(algname)))
     @q begin
         @define_polo_algorithm($algname,$serial,$(algsplit[:kwargs]),$(prettify(algsplit[:body])))
         @define_polo_algorithm($algname,$consistent,$(algsplit[:kwargs]),$(prettify(algsplit[:body])))
@@ -91,9 +93,43 @@ macro define_polo_algorithms(alg)
         @define_polo_paramserver_algorithm($algname,$master,$(algsplit[:kwargs]),$(prettify(algsplit[:body])))
         @define_polo_paramserver_algorithm($algname,$worker,$(algsplit[:kwargs]),$(prettify(algsplit[:body])))
         @define_polo_paramserver_algorithm($algname,$scheduler,$(algsplit[:kwargs]),$(prettify(algsplit[:body])))
+
+        struct $(esc(structname)){Execution <: ExecutionPolicy} <: POLOAlgorithm
+            x::Vector{Float64}
+
+            function $(esc(structname))(execution::Execution) where Execution <: ExecutionPolicy
+                return new{Execution}(Vector{Float64}())
+            end
+        end
+        # Serial
+        $(esc(structname))() = $(esc(structname))(Execution.Serial())
+        function (alg::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger; kw...) where Execution <: Serial
+            resize!(alg.x,length(x₀))
+            alg.x .= x₀
+            return $serial(alg.x, loss, termination, logger; kw...)
+        end
+        function (alg::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss) where Execution <: Serial
+            termination = POLO.Utility.MaxIteration(100)
+            return alg(alg.x,loss,termination,Utility.ProgressLogger.Value(termination))
+        end
+        function (alg::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination) where Execution <: Serial
+            fval = alg(alg.x,loss,termination,Utility.ProgressLogger.Gradient(termination))
+            return fval
+        end
+        # Parameter server
+        function (::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,poptions::ParameterServerOptions; kw...) where Execution <: Master
+            return $master(x₀,loss,poptions; kw...)
+        end
+        function (::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,poptions::ParameterServerOptions; kw...) where Execution <: Worker
+            return $worker(x₀,loss,poptions; kw...)
+        end
+        function (::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,poptions::ParameterServerOptions; kw...) where Execution <: Scheduler
+            return $scheduler(x₀,loss,poptions; kw...)
+        end
     end
 end
 
+abstract type POLOAlgorithm end
 @define_polo_algorithms gradient(; γ::Float64 = 1.) = (Cdouble,)
 @define_polo_algorithms momentum(; μ::Float64 = 0.9, ϵ::Float64 = 1e-1, γ::Float64 = 1.) = (Cdouble,Cdouble,Cdouble)
 @define_polo_algorithms nesterov(; μ::Float64 = 0.9, ϵ::Float64 = 1e-1, γ::Float64 = 1.) = (Cdouble,Cdouble,Cdouble)
