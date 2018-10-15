@@ -1,4 +1,17 @@
-struct Serial <: ExecutionPolicy end
+struct Serial <: ExecutionPolicy
+    fval::Float64
+    x::Vector{Float64}
+
+    function (::Type{Serial})()
+        return new(0., Vector{Float64}())
+    end
+end
+
+function initialize!(serial::Serial, x₀::AbstractVector)
+    resize!(serial.x,length(x₀))
+    serial.x .= x₀
+end
+getx(serial::Serial) = serial.x
 
 function initialize!(proxgrad::ProxGradient{Serial})
     init_c = @cfunction(init_wrapper, Nothing,

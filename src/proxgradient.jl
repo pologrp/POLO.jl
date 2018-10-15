@@ -9,7 +9,6 @@ mutable struct ProxGradient{Execution <: ExecutionPolicy,
     smoothing::Smoothing
     prox::Prox
     ptr::Ptr{Nothing}
-    x::Vector{Float64}
 
     function (::Type{ProxGradient})(execution::Execution,
                                     boosting::Boosting,
@@ -20,7 +19,7 @@ mutable struct ProxGradient{Execution <: ExecutionPolicy,
                                                        Step <: AbstractStep,
                                                        Smoothing <: AbstractSmoothing,
                                                        Prox <: AbstractProx}
-        proxgrad = new{Execution,Boosting,Step,Smoothing,Prox}(execution,boosting,step,smoothing,prox,C_NULL,zeros(0))
+        proxgrad = new{Execution,Boosting,Step,Smoothing,Prox}(execution,boosting,step,smoothing,prox,C_NULL)
         initialize!(proxgrad)
         return proxgrad
     end
@@ -31,11 +30,18 @@ function destruct(proxgrad::ProxGradient)
     ccall(delete_handle(proxgrad.execution), Nothing, (Ptr{Nothing},), proxgrad)
 end
 
+function initialize!(proxgrad::ProxGradient, x₀::AbstractVector)
+    initialize!(proxgrad.execution, x₀)
+    initialize!(proxgrad.boosting, x₀)
+    initialize!(proxgrad.step, x₀)
+    initialize!(proxgrad.smoothing, x₀)
+    initialize!(proxgrad.prox, x₀)
+end
+
 function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger)
-    resize!(proxgrad.x,length(x₀))
-    proxgrad.x .= x₀
-    xbegin = pointer(proxgrad.x, 1)
-    xend = pointer(proxgrad.x, length(x₀) + 1)
+    initialize!(proxgrad.execution, x₀)
+    xbegin = pointer(proxgrad.execution.x, 1)
+    xend = pointer(proxgrad.execution.x, length(x₀) + 1)
     loss_c = @cfunction(loss_wrapper, Cdouble,
                         (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
     termination_c = @cfunction(termination_wrapper, Cint,
@@ -66,9 +72,10 @@ function getf(proxgrad::ProxGradient)
 end
 
 function getx!(proxgrad::ProxGradient)
-    ccall(getx_handle(proxgrad.execution), Nothing, (Ptr{Nothing}, Ref{Cdouble}), proxgrad, proxgrad.x)
-    return proxgrad.x
+    ccall(getx_handle(proxgrad.execution), Nothing, (Ptr{Nothing}, Ref{Cdouble}), proxgrad, proxgrad.execution.x)
+    return proxgrad.execution.x
 end
+getx(proxgrad::ProxGradient) = getx(proxgrad.execution)
 
 function set_boosting_params!(proxgrad::ProxGradient; kwargs...)
     if params(proxgrad.boosting) == nothing

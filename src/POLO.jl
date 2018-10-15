@@ -13,6 +13,7 @@ export
     Loss,
     getf,
     getx!,
+    getx,
     POLOSolvers
 
 include("load_library.jl")

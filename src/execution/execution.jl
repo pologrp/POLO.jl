@@ -10,7 +10,7 @@ using Libdl
 using POLO
 using POLO: ProxGradient, ExecutionPolicy, AbstractLoss, AbstractLogger, AbstractTermination, init_wrapper, boost_wrapper, step_wrapper, smooth_wrapper, prox_wrapper
 using Parameters
-import POLO: initialize!, execution_handle, delete_handle, getf_handle, getx_handle
+import POLO: initialize!, execution_handle, delete_handle, getf_handle, getx_handle, getx
 
 include("serial.jl")
 include("multithread.jl")

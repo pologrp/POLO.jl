@@ -23,7 +23,6 @@ end
 
 params(momentum::Momentum) = momentum.params
 
-
 function boost!(momentum::Momentum{Classical},wid::Integer,klocal::Integer,kglobal::Integer,gprev::AbstractVector,gcurr::AbstractVector)
     @unpack μ,ϵ = momentum.params
     momentum.ν .= μ*momentum.ν + ϵ*gprev

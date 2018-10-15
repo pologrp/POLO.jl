@@ -1,68 +1,139 @@
-# const gc_protect = Dict{Ptr{Cvoid},Any}()
+using POLO: loss!, boost!, stepsize, smooth!, prox!, terminate, log
+using LinearAlgebra
+import POLO: getf, getx!
+import Base: copyto!
 
-# gc_protect_cb(work) = (pop!(gc_protect, work.handle, nothing); close_handle(work))
+abstract type MultiThread <: ExecutionPolicy end
 
-# function gc_protect_handle(obj::Any)
-#     work = Compat.AsyncCondition(gc_protect_cb)
-#     gc_protect[work.handle] = (work,obj)
-#     work.handle
-# end
+mutable struct Consistent <: MultiThread
+    mutex::Threads.Mutex
+    k::Int
+    fval::Float64
+    x::Vector{Float64}
+    g::Vector{Float64}
 
-# # Thread-safe zeromq callback when data is freed, passed to zmq_msg_init_data.
-# # The hint parameter will be a uv_async_t* pointer.
-# function gc_free_fn(data::Ptr{Cvoid}, hint::Ptr{Cvoid})
-#     ccall(:uv_async_send,Cint,(Ptr{Cvoid},),hint)
-# end
-
-struct MultiThread <: ExecutionPolicy end
-
-function initialize!(proxgrad::ProxGradient{MultiThread})
-    init_c = @cfunction(init_wrapper, Nothing,
-                        (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
-    boost = POLO.boosting(proxgrad)
-    boosting_c = @cfunction(boost_wrapper, Ptr{Cdouble},
-                              (Cint, Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
-    step = POLO.stepsize(proxgrad)
-    step_c = @cfunction(step_wrapper, Cdouble,
-                          (Cint, Cint, Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
-    smooth = POLO.smoothing(proxgrad)
-    smoothing_c = @cfunction(smooth_wrapper, Ptr{Cdouble},
-                               (Cint, Cint, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
-    proxim = POLO.prox(proxgrad)
-    prox_c = @cfunction(prox_wrapper, Ptr{Cdouble},
-                          (Cdouble, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Cvoid}))
-    proxgrad.ptr = ccall(POLO.proxgradient_mt, Ptr{Cvoid},
-                         (Ptr{Cvoid},
-                          Ptr{Cvoid}, Any,
-                          Ptr{Cvoid}, Any,
-                          Ptr{Cvoid}, Any,
-                          Ptr{Cvoid}, Any),
-                         init_c,
-                         boosting_c, boost,
-                         step_c, step,
-                         smoothing_c, smooth,
-                         prox_c, proxim)
-    return proxgrad
+    function (::Type{Consistent})()
+        return new(Threads.Mutex(),1,0.,Vector{Float64}(),Vector{Float64}())
+    end
 end
 
-execution_handle(::MultiThread) = POLO.run_multithread
-delete_handle(::MultiThread) = POLO.delete_proxgradient_mt
-getf_handle(::MultiThread) = POLO.getf_mt
-getx_handle(::MultiThread) = POLO.getx_mt
+getk(consistent::Consistent) = consistent.k
+getf(consistent::Consistent) = consistent.fval
+setf!(consistent::Consistent, fval::AbstractFloat) = consistent.fval = fval
+readx(consistent::Consistent) = consistent.x
+readg(consistent::Consistent) = consistent.g
+increment(consistent::Consistent) = consistent.k += 1
 
-# function (proxgrad::ProxGradient{MultiThread})(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger)
-#     resize!(proxgrad.x,length(x₀))
-#     proxgrad.x[:] = x₀
-#     xbegin = pointer(proxgrad.x, 1)
-#     xend = pointer(proxgrad.x, length(x₀) + 1)
-#     return ccall(execution_handle(proxgrad.execution), Nothing,
-#                  (Ptr{Cvoid},Ptr{Cdouble}, Ptr{Cdouble},
-#                   Ptr{Cvoid}, Any,
-#                   Ptr{Cvoid}, Any,
-#                   Ptr{Cvoid}, Any),
-#                  proxgrad,
-#                  xbegin, xend,
-#                  POLO.loss_c, loss,
-#                  POLO.termination_c, termination,
-#                  POLO.log_c, logger)
-# end
+function initialize!(consistent::Consistent, x₀::AbstractVector)
+    consistent.k = 1
+    consistent.fval = 0.
+    resize!(consistent.x,length(x₀))
+    consistent.x .= x₀
+    resize!(consistent.g,length(x₀))
+    consistent.g .= zeros(length(x₀))
+end
+
+mutable struct Inconsistent <: MultiThread
+    k::Threads.Atomic{Int}
+    fval::Threads.Atomic{Float64}
+    x::Vector{Threads.Atomic{Float64}}
+    g::Vector{Threads.Atomic{Float64}}
+
+    function (::Type{Inconsistent})()
+        return new(Threads.Atomic{Int}(1),Threads.Atomic{Float64}(0.),Vector{Threads.Atomic{Float64}}(),Vector{Threads.Atomic{Float64}}())
+    end
+end
+
+function copyto!(::IndexStyle, dest::AbstractArray{<:Threads.Atomic}, ::IndexStyle, src::AbstractArray)
+    destinds, srcinds = LinearIndices(dest), LinearIndices(src)
+    isempty(srcinds) || (checkbounds(Bool, destinds, first(srcinds)) && checkbounds(Bool, destinds, last(srcinds))) ||
+        throw(BoundsError(dest, srcinds))
+    @inbounds for i in srcinds
+        dest[i][] = src[i]
+    end
+    return dest
+end
+
+getk(inconsistent::Inconsistent) = inconsistent.k[]
+getf(inconsistent::Inconsistent) = inconsistent.fval[]
+setf!(inconsistent::Inconsistent, fval::AbstractFloat) = inconsistent.fval[] = fval
+readx(inconsistent::Inconsistent) = getindex.(inconsistent.x)
+readg(inconsistent::Inconsistent) = getindex.(inconsistent.g)
+increment(inconsistent::Inconsistent) = Threads.atomic_add!(inconsistent.k, 1)
+
+function initialize!(inconsistent::Inconsistent, x₀::AbstractVector)
+    inconsistent.k[] = 1.
+    inconsistent.fval[] = 0.
+    resize!(inconsistent.x,length(x₀))
+    inconsistent.x .= Threads.Atomic{Float64}.(x₀)
+    resize!(inconsistent.g,length(x₀))
+    inconsistent.g .= Threads.Atomic{Float64}.(0.)
+end
+
+function (proxgrad::ProxGradient{<:MultiThread})(x₀::AbstractVector, loss::AbstractLoss, termination::AbstractTermination, logger::AbstractLogger)
+    initialize!(proxgrad, x₀)
+
+    Threads.@threads for i = 1:Threads.nthreads()
+        kernel(proxgrad, Threads.threadid(), loss, termination, logger)
+    end
+end
+
+getf(proxgrad::ProxGradient{<:MultiThread}) = getf(proxgrad.execution)
+getx!(proxgrad::ProxGradient{<:MultiThread}) = nothing
+getx(multithread::MultiThread) = readx(multithread)
+
+function kernel(proxgrad::ProxGradient{<:MultiThread}, wid::Integer, loss::AbstractLoss, termination::AbstractTermination, logger::AbstractLogger)
+    xlocal::Vector{Float64} = zeros(length(proxgrad.execution.x))
+    glocal::Vector{Float64} = zeros(length(proxgrad.execution.g))
+
+    read!(proxgrad, xlocal)
+    flocal::Float64 = loss!(loss, xlocal, glocal)
+    while true
+        klocal::Int = getk(proxgrad.execution)
+        if !iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger)
+            return nothing
+        end
+        read!(proxgrad, xlocal)
+        flocal = loss!(loss, xlocal, glocal)
+    end
+end
+
+function iterate!(proxgrad::ProxGradient{<:MultiThread}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger, ::Val{false})
+    k = getk(proxgrad.execution)
+    x = proxgrad.execution.x
+    g = proxgrad.execution.g
+    if terminate(termination, k, flocal, readx(proxgrad.execution), glocal)
+        # Final log
+        log(logger, klocal, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
+        setf!(proxgrad.execution, flocal)
+        return false
+    end
+    boost!(POLO.boosting(proxgrad), wid, klocal, k, glocal, g)
+    smooth!(POLO.smoothing(proxgrad), klocal, k, readx(proxgrad.execution), readg(proxgrad.execution), g)
+    η = stepsize(POLO.stepsize(proxgrad), klocal, k, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
+    prox!(POLO.prox(proxgrad), η, readx(proxgrad.execution), readg(proxgrad.execution), x)
+    log(logger, klocal, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
+    increment(proxgrad.execution)
+    return true
+end
+iterate!(proxgrad::ProxGradient{Inconsistent}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger) = iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger, Val{false}())
+
+function iterate!(proxgrad::ProxGradient{<:MultiThread}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger, ::Val{true})
+    lock(proxgrad.execution.mutex)
+    res = iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger, Val{false}())
+    unlock(proxgrad.execution.mutex)
+    return res
+end
+iterate!(proxgrad::ProxGradient{Consistent}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger) = iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger, Val{true}())
+
+function read!(proxgrad::ProxGradient{<:MultiThread}, xlocal::AbstractVector, ::Val{false})
+    xlocal .= readx(proxgrad.execution)
+end
+read!(proxgrad::ProxGradient{Inconsistent}, xlocal::AbstractVector) = read!(proxgrad, xlocal, Val{false}())
+
+function read!(proxgrad::ProxGradient{<:MultiThread}, xlocal::AbstractVector, ::Val{true})
+    lock(proxgrad.execution.mutex)
+    read!(proxgrad, xlocal, Val{false}())
+    unlock(proxgrad.execution.mutex)
+end
+read!(proxgrad::ProxGradient{Consistent}, xlocal::AbstractVector) = read!(proxgrad, xlocal, Val{true}())
