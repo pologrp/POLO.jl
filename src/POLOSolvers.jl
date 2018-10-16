@@ -10,9 +10,8 @@ macro define_polo_algorithm(algname, execution, paramdefs, ctypes)
     params = map(paramdef -> begin @capture(paramdef, param_Symbol::type_ = val_); param end, paramdefs)
     quote
         function $(esc(execution))(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger; $(paramdefs...))
-            x = x₀
-            xbegin = pointer(x, 1)
-            xend = pointer(x, length(x₀) + 1)
+            xbegin = pointer(x₀, 1)
+            xend = pointer(x₀, length(x₀) + 1)
             loss_c = @cfunction(POLO.loss_wrapper, Cdouble,
                                 (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
             termination_c = @cfunction(POLO.termination_wrapper, Cint,
@@ -38,9 +37,8 @@ macro define_inconsistent_polo_algorithm(algname, execution, paramdefs, ctypes)
     params = map(paramdef -> begin @capture(paramdef, param_Symbol::type_ = val_); param end, paramdefs)
     quote
         function $(esc(execution))(x₀::AbstractVector,loss::AbstractLoss; $(paramdefs...))
-            x = x₀
-            xbegin = pointer(x, 1)
-            xend = pointer(x, length(x₀) + 1)
+            xbegin = pointer(x₀, 1)
+            xend = pointer(x₀, length(x₀) + 1)
             loss_c = @cfunction(POLO.loss_wrapper, Cdouble,
                                 (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
              fval = ccall(POLO.$(execution), Cdouble,
@@ -58,9 +56,8 @@ macro define_polo_paramserver_algorithm(algname, execution, paramdefs, ctypes)
     params = map(paramdef -> begin @capture(paramdef, param_Symbol::type_ = val_); param end, paramdefs)
     @q begin
         function $(esc(execution))(x₀::AbstractVector,loss::AbstractLoss,poptions::Execution.ParameterServerOptions; $(paramdefs...))
-            x = x₀
-            xbegin = pointer(x, 1)
-            xend = pointer(x, length(x₀) + 1)
+            xbegin = pointer(x₀, 1)
+            xend = pointer(x₀, length(x₀) + 1)
             loss_c = @cfunction(POLO.loss_wrapper, Cdouble,
                                 (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
             fval = ccall(POLO.$(execution), Cdouble,
@@ -113,8 +110,7 @@ macro define_polo_algorithms(alg)
             return alg(alg.x,loss,termination,Utility.ProgressLogger.Value(termination))
         end
         function (alg::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination) where Execution <: Serial
-            fval = alg(alg.x,loss,termination,Utility.ProgressLogger.Gradient(termination))
-            return fval
+            return alg(alg.x,loss,termination,Utility.ProgressLogger.Gradient(termination))
         end
         # Parameter server
         function (::$(esc(structname)){Execution})(x₀::AbstractVector,loss::AbstractLoss,poptions::ParameterServerOptions; kw...) where Execution <: Master

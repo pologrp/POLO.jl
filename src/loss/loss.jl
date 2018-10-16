@@ -20,6 +20,7 @@ end
 module Loss
 
 using LinearAlgebra
+using SparseArrays
 using DelimitedFiles
 using POLO: AbstractLoss
 import POLO: loss!, nfeatures

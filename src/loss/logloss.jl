@@ -105,10 +105,10 @@ end
 
 function readrcv(dsfolder::String, range, categories::Vector{String}, nfeatures::Int)
     # Feature files
-    featurefiles = map(x->joinpath(dsfolder, x), filter(x->contains(x, "_vec_"), readdir(dsfolder)))
+    featurefiles = map(x->joinpath(dsfolder, x), filter(x->occursin("_vec_", x), readdir(dsfolder)))
 
     # Topic files mapping documents to topics
-    topicfiles = map(x->joinpath(dsfolder, x), filter(x->contains(x, ".qrels"), readdir(dsfolder)))
+    topicfiles = map(x->joinpath(dsfolder, x), filter(x->occursin(".qrels", x), readdir(dsfolder)))
 
     startidx = first(range)
     endidx = last(range)
