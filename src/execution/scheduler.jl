@@ -16,8 +16,8 @@ function destruct(scheduler::Scheduler)
     ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), scheduler)
 end
 
-paramserver_handle(::Scheduler) = proxgradient_scheduler
-execution_handle(::Scheduler) = run_scheduler
-delete_handle(::Scheduler) = delete_proxgradient_scheduler
+paramserver_handle(::Scheduler) = POLO.proxgradient_scheduler
+execution_handle(::Scheduler) = POLO.run_scheduler
+delete_handle(::Scheduler) = POLO.delete_proxgradient_scheduler
 # getf_handle(::Scheduler) = getf_scheduler
 # getx_handle(::Scheduler) = getx_scheduler

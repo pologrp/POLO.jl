@@ -16,8 +16,8 @@ function destruct(master::Master)
     ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), master)
 end
 
-paramserver_handle(::Master) = proxgradient_master
-execution_handle(::Master) = run_master
-delete_handle(::Master) = delete_proxgradient_master
+paramserver_handle(::Master) = POLO.proxgradient_master
+execution_handle(::Master) = POLO.run_master
+delete_handle(::Master) = POLO.delete_proxgradient_master
 # getf_handle(::Master) = getf_master
 # getx_handle(::Master) = getx_master

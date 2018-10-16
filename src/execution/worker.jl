@@ -16,8 +16,8 @@ function destruct(worker::Worker)
     ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), worker)
 end
 
-paramserver_handle(::Worker) = proxgradient_worker
-execution_handle(::Worker) = run_worker
-delete_handle(::Worker) = delete_proxgradient_worker
+paramserver_handle(::Worker) = POLO.proxgradient_worker
+execution_handle(::Worker) = POLO.run_worker
+delete_handle(::Worker) = POLO.delete_proxgradient_worker
 # getf_handle(::Worker) = getf_worker
 # getx_handle(::Worker) = getx_worker

@@ -36,14 +36,14 @@ function initialize!(proxgrad::ProxGradient{ParameterServer})
 end
 
 function initialize_paramserver_options!(paramserver::ParameterServer)
-    paramserver.popts = ccall(paramserver_options, Ptr{Nothing}, ())
-    ccall(linger, Nothing, (Ptr{Nothing},Cint), paramserver.popts, paramserver.paramoptions.linger)
-    ccall(master_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.master_timeout)
-    ccall(worker_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.worker_timeout)
-    ccall(scheduler_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.scheduler_timeout)
-    ccall(num_masters, Nothing, (Ptr{Nothing},Cint), paramserver.popts, paramserver.paramoptions.num_masters)
+    paramserver.popts = ccall(POLO.paramserver_options, Ptr{Nothing}, ())
+    ccall(POLO.linger, Nothing, (Ptr{Nothing},Cint), paramserver.popts, paramserver.paramoptions.linger)
+    ccall(POLO.master_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.master_timeout)
+    ccall(POLO.worker_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.worker_timeout)
+    ccall(POLO.scheduler_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.scheduler_timeout)
+    ccall(POLO.num_masters, Nothing, (Ptr{Nothing},Cint), paramserver.popts, paramserver.paramoptions.num_masters)
     pub_port, master_port, worker_port = paramserver.paramoptions.scheduler_ports
-    ccall(scheduler, Nothing,
+    ccall(POLO.scheduler, Nothing,
           (Ptr{Nothing},Ptr{UInt8},
            Cushort,Cushort,
            Cushort),
@@ -52,7 +52,7 @@ function initialize_paramserver_options!(paramserver::ParameterServer)
           pub_port,
           master_port,
           worker_port)
-    ccall(master, Nothing,
+    ccall(POLO.master, Nothing,
           (Ptr{Nothing},Ptr{UInt8},Cushort),
           paramserver.popts,
           paramserver.paramoptions.master_address,
