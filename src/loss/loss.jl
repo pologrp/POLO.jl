@@ -5,8 +5,8 @@ abstract type AbstractLoss end
 # end
 
 function loss!() end
-
 function nfeatures() end
+function nsamples() end
 
 function loss_wrapper(xbegin::Ptr{Cdouble},gbegin::Ptr{Cdouble},loss_data::Ptr{Nothing})
     loss = unsafe_pointer_to_objref(loss_data)::AbstractLoss
@@ -23,7 +23,7 @@ using LinearAlgebra
 using SparseArrays
 using DelimitedFiles
 using POLO: AbstractLoss
-import POLO: loss!, nfeatures
+import POLO: loss!, nfeatures, nsamples
 
 include("leastsquares.jl")
 include("logloss.jl")
