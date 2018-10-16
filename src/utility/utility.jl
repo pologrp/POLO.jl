@@ -33,10 +33,19 @@ module Utility
 using POLO
 using POLO: AbstractTermination, AbstractLogger
 using LinearAlgebra
+using SparseArrays
 
 import POLO: terminate
 
 include("termination.jl")
 include("logging.jl")
+
+# TODO:
+# 1. Maybe we can redesign `reader`s as above, i.e., `AbstractReader`.
+# 2. Implement `svmreader` to support "dense" reading --- that will be more
+#    efficient compared to the `push!`s.
+# 3. One can still make improvements when `m` and `n` are known.
+# 4. Add tests.
+include("svmreader.jl")
 
 end
