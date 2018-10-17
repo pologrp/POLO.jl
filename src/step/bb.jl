@@ -1,9 +1,14 @@
+@with_kw mutable struct BBParameters{T <: AbstractFloat} <: AbstractPolicyParameters
+    γ₀::T = 1.
+end
+
 mutable struct BB <: AbstractStep
+    params::BBParameters{Float64}
     xprev::Vector{Float64}
     gprev::Vector{Float64}
 
-    function (::Type{BB})()
-        return new()
+    function (::Type{BB})(; kwargs...)
+        return new(BBParameters(; kwargs...))
     end
 end
 
@@ -16,7 +21,7 @@ function stepsize(bb::BB,klocal::Integer,kglobal::Integer,fval::Real,x::Abstract
     if kglobal == 1
         bb.xprev .= x
         bb.gprev .= g
-        return 1.
+        return bb.params.γ₀
     end
     s = x - bb.xprev
     y = g - bb.gprev
