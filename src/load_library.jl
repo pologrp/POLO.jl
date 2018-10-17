@@ -50,16 +50,6 @@ function __init__()
     global getx_mt = Libdl.dlsym(polo_lib, :getx_mt)
 
     # Parameter server
-    # ParamserverOptions
-    global paramserver_options = Libdl.dlsym(polo_lib, :paramserver_options)
-    global delete_paramserver_options = Libdl.dlsym(polo_lib, :delete_paramserver_options)
-    global linger = Libdl.dlsym(polo_lib, :linger)
-    global master_timeout = Libdl.dlsym(polo_lib, :master_timeout)
-    global worker_timeout = Libdl.dlsym(polo_lib, :worker_timeout)
-    global scheduler_timeout = Libdl.dlsym(polo_lib, :scheduler_timeout)
-    global num_masters = Libdl.dlsym(polo_lib, :num_masters)
-    global scheduler = Libdl.dlsym(polo_lib, :scheduler)
-    global master = Libdl.dlsym(polo_lib, :master)
     # Master
     global proxgradient_master = Libdl.dlsym(polo_lib, :proxgradient_master)
     global delete_proxgradient_master = Libdl.dlsym(polo_lib, :delete_proxgradient_master)

@@ -1,11 +1,11 @@
-@with_kw mutable struct ParameterServerOptions
-    linger::Int32 = Int32(1000)
-    master_timeout::Int = 10000
-    worker_timeout::Int = -1
-    scheduler_timeout::Int = -1
+@with_kw struct ParameterServerOptions
+    linger::Cint = Cint(1000)
+    master_timeout::Clong = 10000
+    worker_timeout::Clong = -1
+    scheduler_timeout::Clong = -1
     num_masters::Int32 = Int32(1)
-    scheduler_address::String = "localhost"
-    master_address::String = ""
+    scheduler_address::NTuple{256,Cchar} = ntuple(i->Cchar('\0'),256)
+    master_address::NTuple{256,Cchar} = ntuple(i->Cchar('\0'),256)
     scheduler_ports::Tuple{UInt16,UInt16,UInt16} = (UInt16(40000),UInt16(40001),UInt16(40002))
     master_port::UInt16 = UInt16(40001)
 end
@@ -34,39 +34,14 @@ function initialize!(proxgrad::ProxGradient{<:ParameterServer})
                            Ptr{Nothing}, Any,
                            Ptr{Nothing}, Any,
                            Ptr{Nothing}, Any,
-                           Any),
+                           ParameterServerOptions),
                           init_c,
                           boosting_c, boost,
                           step_c, step,
                           smoothing_c, smooth,
                           prox_c, proxim,
-                          proxgrad.execution.popts)
+                          proxgrad.execution.psopts)
     return proxgrad
-end
-
-function initialize_paramserver_options!(paramserver::ParameterServer)
-    paramserver.popts = ccall(POLO.paramserver_options, Ptr{Nothing}, ())
-    ccall(POLO.linger, Nothing, (Ptr{Nothing},Cint), paramserver.popts, paramserver.paramoptions.linger)
-    ccall(POLO.master_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.master_timeout)
-    ccall(POLO.worker_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.worker_timeout)
-    ccall(POLO.scheduler_timeout, Nothing, (Ptr{Nothing},Clong), paramserver.popts, paramserver.paramoptions.scheduler_timeout)
-    ccall(POLO.num_masters, Nothing, (Ptr{Nothing},Int32), paramserver.popts, paramserver.paramoptions.num_masters)
-    pub_port, master_port, worker_port = paramserver.paramoptions.scheduler_ports
-    ccall(POLO.scheduler, Nothing,
-          (Ptr{Nothing},Ptr{UInt8},
-           Cushort,Cushort,
-           Cushort),
-          paramserver.popts,
-          paramserver.paramoptions.scheduler_address,
-          pub_port,
-          master_port,
-          worker_port)
-    ccall(POLO.master, Nothing,
-          (Ptr{Nothing},Ptr{UInt8},Cushort),
-          paramserver.popts,
-          paramserver.paramoptions.master_address,
-          paramserver.paramoptions.master_port)
-    return paramserver
 end
 
 include("master.jl")

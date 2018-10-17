@@ -1,21 +1,14 @@
 # const getf_scheduler = Libdl.dlsym(polo_lib, :getf_scheduler)
 # const getx_scheduler = Libdl.dlsym(polo_lib, :getx_scheduler)
 
-mutable struct Scheduler <: ParameterServer
+struct Scheduler <: ParameterServer
     fval::Float64
     x::Vector{Float64}
-    popts::Ptr{Cvoid}
-    paramoptions::ParameterServerOptions
+    psopts::ParameterServerOptions
 
     function (::Type{Scheduler})(; kw...)
-        scheduler =  new(0., Vector{Float64}(), C_NULL, ParameterServerOptions(; kw...))
-        initialize_paramserver_options!(scheduler)
+        scheduler =  new(0., Vector{Float64}(), ParameterServerOptions(; kw...))
     end
-end
-Base.cconvert(::Type{Ptr{Cvoid}}, scheduler::Scheduler)       = scheduler
-Base.unsafe_convert(::Type{Ptr{Cvoid}}, scheduler::Scheduler) = scheduler.popts
-function destruct(scheduler::Scheduler)
-    ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), scheduler)
 end
 
 function initialize!(scheduler::Scheduler, x₀::AbstractVector)

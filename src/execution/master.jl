@@ -1,21 +1,14 @@
 # const getf_master = Libdl.dlsym(polo_lib, :getf_master)
 # const getx_master = Libdl.dlsym(polo_lib, :getx_master)
 
-mutable struct Master <: ParameterServer
+struct Master <: ParameterServer
     fval::Float64
     x::Vector{Float64}
-    popts::Ptr{Cvoid}
-    paramoptions::ParameterServerOptions
+    psopts::ParameterServerOptions
 
     function (::Type{Master})(; kw...)
-        master =  new(0., Vector{Float64}(), C_NULL,ParameterServerOptions(; kw...))
-        initialize_paramserver_options!(master)
+        master =  new(0., Vector{Float64}(), ParameterServerOptions(; kw...))
     end
-end
-Base.cconvert(::Type{Ptr{Cvoid}}, master::Master)       = master
-Base.unsafe_convert(::Type{Ptr{Cvoid}}, master::Master) = master.popts
-function destruct(master::Master)
-    ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), master)
 end
 
 function initialize!(master::Master, x₀::AbstractVector)

@@ -1,21 +1,14 @@
 # const getf_worker = Libdl.dlsym(polo_lib, :getf_worker)
 # const getx_worker = Libdl.dlsym(polo_lib, :getx_worker)
 
-mutable struct Worker <: ParameterServer
+struct Worker <: ParameterServer
     fval::Float64
-    x::Vector{64}
-    popts::Ptr{Cvoid}
-    paramoptions::ParameterServerOptions
+    x::Vector{Float64}
+    psopts::ParameterServerOptions
 
     function (::Type{Worker})(; kw...)
-        worker =  new(0., Vector{Float64}(), C_NULL,ParameterServerOptions(; kw...))
-        initialize_paramserver_options!(worker)
+        worker =  new(0., Vector{Float64}(), ParameterServerOptions(; kw...))
     end
-end
-Base.cconvert(::Type{Ptr{Cvoid}}, worker::Worker)       = worker
-Base.unsafe_convert(::Type{Ptr{Cvoid}}, worker::Worker) = worker.popts
-function destruct(worker::Worker)
-    ccall(delete_paramserver_options, Nothing, (Ptr{Cvoid},), worker)
 end
 
 function initialize!(worker::Worker, x₀::AbstractVector)
