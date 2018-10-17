@@ -40,8 +40,8 @@ end
 
 function (proxgrad::ProxGradient)(x₀::AbstractVector,loss::AbstractLoss,termination::AbstractTermination,logger::AbstractLogger)
     initialize!(proxgrad.execution, x₀)
-    xbegin = pointer(proxgrad.execution.x, 1)
-    xend = pointer(proxgrad.execution.x, length(x₀) + 1)
+    xbegin = pointer(x₀, 1)
+    xend = pointer(x₀, length(x₀) + 1)
     loss_c = @cfunction(loss_wrapper, Cdouble,
                         (Ptr{Cdouble}, Ptr{Cdouble}, Ptr{Nothing}))
     termination_c = @cfunction(termination_wrapper, Cint,

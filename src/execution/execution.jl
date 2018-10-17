@@ -1,4 +1,3 @@
-function initialize!(::ProxGradient) end
 execution_handle(::ExecutionPolicy) = C_NULL
 delete_handle(::ExecutionPolicy) = C_NULL
 getf_handle(::ExecutionPolicy) = C_NULL
