@@ -27,5 +27,6 @@ import POLO: loss!, nfeatures, nsamples
 
 include("leastsquares.jl")
 include("logloss.jl")
+include("qploss.jl")
 
 end
