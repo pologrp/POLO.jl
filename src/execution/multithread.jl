@@ -103,8 +103,6 @@ function iterate!(proxgrad::ProxGradient{<:MultiThread}, wid::Integer, klocal::I
     x = proxgrad.execution.x
     g = proxgrad.execution.g
     if terminate(termination, k, flocal, readx(proxgrad.execution), glocal)
-        # Final log
-        log(logger, klocal, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
         setf!(proxgrad.execution, flocal)
         return false
     end
@@ -112,15 +110,21 @@ function iterate!(proxgrad::ProxGradient{<:MultiThread}, wid::Integer, klocal::I
     smooth!(POLO.smoothing(proxgrad), klocal, k, readx(proxgrad.execution), readg(proxgrad.execution), g)
     η = stepsize(POLO.stepsize(proxgrad), klocal, k, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
     prox!(POLO.prox(proxgrad), η, readx(proxgrad.execution), readg(proxgrad.execution), x)
-    log(logger, klocal, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
     increment(proxgrad.execution)
     return true
 end
-iterate!(proxgrad::ProxGradient{Inconsistent}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger) = iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger, Val{false}())
+function iterate!(proxgrad::ProxGradient{Inconsistent}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger)
+    res = iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger, Val{false}())
+    if wid == 1
+        log(logger, klocal, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
+    end
+    return res
+end
 
 function iterate!(proxgrad::ProxGradient{<:MultiThread}, wid::Integer, klocal::Integer, flocal::Float64, glocal::AbstractVector, termination::AbstractTermination, logger::AbstractLogger, ::Val{true})
     lock(proxgrad.execution.mutex)
     res = iterate!(proxgrad, wid, klocal, flocal, glocal, termination, logger, Val{false}())
+    log(logger, klocal, flocal, readx(proxgrad.execution), readg(proxgrad.execution))
     unlock(proxgrad.execution.mutex)
     return res
 end
