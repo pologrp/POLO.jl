@@ -6,8 +6,10 @@
     num_masters::Int32 = Int32(1)
     scheduler_address::NTuple{256,Cchar} = ntuple(i->Cchar('\0'),256)
     master_address::NTuple{256,Cchar} = ntuple(i->Cchar('\0'),256)
-    scheduler_ports::Tuple{UInt16,UInt16,UInt16} = (UInt16(40000),UInt16(40001),UInt16(40002))
-    master_port::UInt16 = UInt16(40001)
+    scheduler_pub::UInt16 = 40000
+    scheduler_master::UInt16 = 40001
+    scheduler_worker::UInt16 = 40002
+    master_port::UInt16 = 40001
 end
 
 abstract type ParameterServer <: ExecutionPolicy end
