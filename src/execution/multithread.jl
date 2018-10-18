@@ -5,7 +5,7 @@ import Base: copyto!
 
 abstract type MultiThread <: ExecutionPolicy end
 
-initialize(::ProxGradient{<:MultiThread}) = nothing
+initialize!(::ProxGradient{<:MultiThread}) = nothing
 
 mutable struct Consistent <: MultiThread
     mutex::Threads.Mutex
