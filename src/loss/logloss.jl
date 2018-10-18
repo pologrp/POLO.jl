@@ -1,53 +1,38 @@
-struct LogLoss <: AbstractLoss
-    N::Int
-    d::Int
-    A::Matrix{Float64}
-    b::Vector{Float64}
+struct LogLoss{M,Value<:AbstractFloat} <: AbstractLoss
+  A::M
+  b::Vector{Value}
 
-    function (::Type{LogLoss})(N::Integer, d::Integer)
-        @assert d ≥ 1 "d must be at least 1"
-        @assert N ≥ d "N must be at least $(d)"
+  function (::Type{LogLoss})(A::AbstractMatrix, b::AbstractVector)
+    @assert size(A, 1) == length(b) "`A` and `b` must have compatible dimensions"
+    Value = float(promote_type(eltype(A), eltype(b)))
+    mat = convert(AbstractMatrix{Value}, A)
 
-        A = randn(N, d)
-        A *= 2/norm(A)
-        b = Float64[rand() ≤ 0.5 ? -1. : 1. for idx in 1:N]
-
-        new(N, d, A, b)
-    end
-
-    function (::Type{LogLoss})(dsfolder::String, range, categories::Vector{String}, nfeatures::Int)
-        A, b = readrcv(dsfolder,range,categories,nfeatures)
-        N, d = size(A)
-
-        new(N, d, A, b)
-    end
+    new{typeof(mat), Value}(mat, Vector{Value}(b))
+  end
 end
 
-nfeatures(loss::LogLoss)    = loss.d
-nsamples(loss::LogLoss)   = loss.N
+nsamples(loss::LogLoss)   = size(loss.A, 1)
+nfeatures(loss::LogLoss)  = size(loss.A, 2)
 
-function _value(x::AbstractVector{T}, A::AbstractMatrix,
-  b::AbstractVector, N::Integer) where T <: Real
+function _value(x::AbstractVector{<:Real}, A::AbstractMatrix, b::AbstractVector)
   temp = exp.(-b .* (A*x))
   for idx in 1:length(temp)
-    @inbounds temp[idx] = isinf(temp[idx]) ? -b[idx]*dot(A[idx,:], x) :
-                                            log1p(temp[idx])
+    @inbounds temp[idx] = isinf(temp[idx]) ? -b[idx]*dot(A[idx,:], x) : log1p(temp[idx])
   end
-  return sum(temp)/N
+  return sum(temp)
 end
 
-function value(loss::LogLoss, x::AbstractVector{T}) where T <: Real
-  N, d, A, b = loss.N, loss.d, loss.A, loss.b
+function value(loss::LogLoss, x::AbstractVector{<:Real})
   if length(x) ≠ nfeatures(loss)
     warn("value: `x` must have a length of `nfeatures(loss)`")
     throw(DomainError())
   end
-  return _value(x, A, b, N)
+  return _value(x, loss.A, loss.b)
 end
 
-function value(loss::LogLoss, x::AbstractVector{T},
-  comps::AbstractVector{S}) where {T <: Real, S <: Integer}
-  N, d = loss.N, loss.d
+function value(loss::LogLoss, x::AbstractVector{<:Real},
+               comps::AbstractVector{<:Integer})
+  N, d = nsamples(loss), nfeatures(loss)
   compmin, compmax = extrema(comps)
   if length(x) ≠ nfeatures(loss)
     warn("value: `x` must have a length of `nfeatures(loss)`")
@@ -57,35 +42,32 @@ function value(loss::LogLoss, x::AbstractVector{T},
     throw(DomainError())
   end
   A, b = loss.A[comps,:], loss.b[comps]
-  return _value(x, A, b, N)
+  return _value(x, A, b)
 end
 
 function _gradient!(x::AbstractVector{T}, dx::AbstractVector{T},
-  A::AbstractMatrix, b::AbstractVector, N::Integer) where T <: Real
+                    A::AbstractMatrix, b::AbstractVector) where {T <: Real}
   temp = exp.(-b .* (A*x))
-
   for idx in 1:length(temp)
-    @inbounds temp[idx] = isinf(temp[idx]) ? -b[idx]/N :
-                                             -b[idx]*temp[idx]/(1. + temp[idx])/N
+    @inbounds temp[idx] = isinf(temp[idx]) ? -b[idx] : -b[idx]*temp[idx]/(one(T) + temp[idx])
   end
-
   return mul!(dx, transpose(A), temp)
 end
 
 function gradient!(loss::LogLoss, x::AbstractVector{T},
-  dx::AbstractVector{T}) where T <: Real
-  N, d, A, b = loss.N, loss.d, loss.A, loss.b
+                   dx::AbstractVector{T}) where {T<:Real}
   if length(x) ≠ length(dx) || length(x) ≠ nfeatures(loss)
     warn("gradient!: Both `x` and `dx` must have a length of `nfeatures(loss)`")
     throw(DomainError())
   end
 
-  return _gradient!(x, dx, A, b, N)
+  A, b = loss.A, loss.b
+  return _gradient!(x, dx, A, b)
 end
 
-function gradient!(loss::LogLoss, x::AbstractVector{T},
-  dx::AbstractVector{T}, comps::AbstractVector{S}) where {T<:Real, S<:Integer}
-  N, d = loss.N, loss.d
+function gradient!(loss::LogLoss, x::AbstractVector{T}, dx::AbstractVector{T},
+                   comps::AbstractVector{<:Integer}) where {T<:Real}
+  N, d = nsamples(loss), nfeatures(loss)
   compmin, compmax = extrema(comps)
   if length(x) ≠ length(dx) || length(x) ≠ nfeatures(loss)
     warn("gradient!: Both `x` and `dx` must have a length of `nfeatures(loss)`")
@@ -95,9 +77,11 @@ function gradient!(loss::LogLoss, x::AbstractVector{T},
     throw(DomainError())
   end
   A, b = loss.A[comps,:], loss.b[comps]
-  return _gradient!(x, dx, A, b, N)
+  return _gradient!(x, dx, A, b)
 end
 
+# TODO: Still not efficient. Make a helper function to avoid calling `temp =
+# exp.(-b .* (A*x)) twice, i.e., one for `gradient!` and another for `value`.
 function loss!(loss::LogLoss, x::AbstractVector, g::AbstractVector)
     gradient!(loss,x,g)
     return value(loss,x)
