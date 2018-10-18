@@ -22,25 +22,12 @@ function _value(x::AbstractVector{<:Real}, A::AbstractMatrix, b::AbstractVector)
   return sum(temp)
 end
 
-function value(loss::LogLoss, x::AbstractVector{<:Real})
-  if length(x) ≠ nfeatures(loss)
-    warn("value: `x` must have a length of `nfeatures(loss)`")
-    throw(DomainError())
-  end
-  return _value(x, loss.A, loss.b)
-end
+value(loss::LogLoss, x::AbstractVector{<:Real}) = _value(x, loss.A, loss.b)
 
 function value(loss::LogLoss, x::AbstractVector{<:Real},
                comps::AbstractVector{<:Integer})
   N, d = nsamples(loss), nfeatures(loss)
   compmin, compmax = extrema(comps)
-  if length(x) ≠ nfeatures(loss)
-    warn("value: `x` must have a length of `nfeatures(loss)`")
-    throw(DomainError())
-  elseif compmin < 1 || compmax > N
-    warn("value: `comps` must lie within [1,$(N)]")
-    throw(DomainError())
-  end
   A, b = loss.A[comps,:], loss.b[comps]
   return _value(x, A, b)
 end
@@ -56,11 +43,6 @@ end
 
 function gradient!(loss::LogLoss, x::AbstractVector{T},
                    dx::AbstractVector{T}) where {T<:Real}
-  if length(x) ≠ length(dx) || length(x) ≠ nfeatures(loss)
-    warn("gradient!: Both `x` and `dx` must have a length of `nfeatures(loss)`")
-    throw(DomainError())
-  end
-
   A, b = loss.A, loss.b
   return _gradient!(x, dx, A, b)
 end
@@ -69,13 +51,6 @@ function gradient!(loss::LogLoss, x::AbstractVector{T}, dx::AbstractVector{T},
                    comps::AbstractVector{<:Integer}) where {T<:Real}
   N, d = nsamples(loss), nfeatures(loss)
   compmin, compmax = extrema(comps)
-  if length(x) ≠ length(dx) || length(x) ≠ nfeatures(loss)
-    warn("gradient!: Both `x` and `dx` must have a length of `nfeatures(loss)`")
-    throw(DomainError())
-  elseif compmin < 1 || compmax > N
-    warn("gradient!: `comps` must lie within [1,$(N)]")
-    throw(DomainError())
-  end
   A, b = loss.A[comps,:], loss.b[comps]
   return _gradient!(x, dx, A, b)
 end
@@ -83,6 +58,6 @@ end
 # TODO: Still not efficient. Make a helper function to avoid calling `temp =
 # exp.(-b .* (A*x)) twice, i.e., one for `gradient!` and another for `value`.
 function loss!(loss::LogLoss, x::AbstractVector, g::AbstractVector)
-    gradient!(loss,x,g)
-    return value(loss,x)
+  gradient!(loss,x,g)
+  return value(loss,x)
 end
