@@ -1,9 +1,11 @@
 using POLO: loss!, boost!, stepsize, smooth!, prox!, terminate, log
 using LinearAlgebra
-import POLO: getf, getx!
+import POLO: getf, getx!, initialize!
 import Base: copyto!
 
 abstract type MultiThread <: ExecutionPolicy end
+
+initialize(::ProxGradient{<:MultiThread}) = nothing
 
 mutable struct Consistent <: MultiThread
     mutex::Threads.Mutex
