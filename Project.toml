@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+Flux = "587475ba-b771-5e3f-ad9e-33799f191a9c"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
